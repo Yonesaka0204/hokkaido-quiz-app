@@ -5,14 +5,21 @@ const path = require('path');
 const admin = require('firebase-admin');
 
 try {
-    const serviceAccount = require('./serviceAccountKey.json');
+    // Renderの環境変数から認証情報を読み込むように修正
+    const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
+    if (!serviceAccountString) {
+        throw new Error('Firebaseの認証情報が環境変数に設定されていません。');
+    }
+    const serviceAccount = JSON.parse(serviceAccountString);
+
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount)
     });
 } catch (error) {
-    console.error("Firebase Admin SDKの初期化に失敗しました。serviceAccountKey.json を確認してください。", error);
+    console.error("Firebase Admin SDKの初期化に失敗しました。", error);
     process.exit(1);
 }
+
 const db = admin.firestore();
 
 const app = express();

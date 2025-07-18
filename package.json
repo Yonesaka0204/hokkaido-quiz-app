@@ -1,14 +1,16 @@
 {
   "name": "quiz-room",
   "version": "1.0.0",
-  "description": "Real-time Quiz Application",
+  "description": "Real-time quiz application",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
+  "author": "",
+  "license": "ISC",
   "dependencies": {
-    "express": "^4.19.2",
-    "firebase-admin": "^12.1.1",
-    "socket.io": "^4.7.5"
+    "express": "^4.18.2",
+    "firebase-admin": "^11.5.0",
+    "socket.io": "^4.6.1"
   }
 }
