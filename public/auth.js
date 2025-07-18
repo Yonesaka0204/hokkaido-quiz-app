@@ -68,3 +68,23 @@ const firebaseConfig = {
               .catch(showAuthError);
       });
   }
+
+  // --- パスワードリセットのロジック ---
+  const forgotPasswordLink = document.getElementById('forgot-password-link');
+  if (forgotPasswordLink) {
+      forgotPasswordLink.addEventListener('click', (e) => {
+          e.preventDefault(); // リンクの通常の動作を防ぐ
+          
+          const email = prompt("パスワードをリセットしたいアカウントのメールアドレスを入力してください。");
+          
+          if (email) {
+              auth.sendPasswordResetEmail(email)
+                  .then(() => {
+                      alert("パスワード再設定用のメールを送信しました。メールボックスを確認してください。");
+                  })
+                  .catch((error) => {
+                      showAuthError(error);
+                  });
+          }
+      });
+  }
