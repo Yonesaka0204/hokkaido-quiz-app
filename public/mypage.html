@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>マイページ</title>
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        .status-card {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            text-align: left;
+        }
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+        .status-item span:first-child {
+            font-weight: bold;
+            color: #495057;
+        }
+        .xp-progress-bar {
+            width: 100%;
+            background-color: #e9ecef;
+            border-radius: .25rem;
+            height: 1.5rem;
+            margin-top: 0.5rem;
+            overflow: hidden;
+        }
+        .xp-progress {
+            background-color: #007bff;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            font-size: 0.9rem;
+            font-weight: bold;
+            transition: width 0.6s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>マイページ</h1>
+        <div id="user-status" class="status-card" style="display: none;">
+            <div class="status-item">
+                <span>ユーザー名</span>
+                <span id="username-display">---</span>
+            </div>
+            <div class="status-item">
+                <span>レベル</span>
+                <span id="level-display">--</span>
+            </div>
+            <div class="status-item">
+                <span>ELOレート</span>
+                <span id="rating-display">----</span>
+            </div>
+            <div class="status-item">
+                <span>現在の経験値 (XP)</span>
+                <span id="xp-display">--</span>
+            </div>
+            <div>
+                <div class="status-item" style="margin-bottom: 0;">
+                    <span>次のレベルまで</span>
+                    <span id="xp-next-display">-- / --</span>
+                </div>
+                <div class="xp-progress-bar">
+                    <div id="xp-progress" class="xp-progress" style="width: 0%;">0%</div>
+                </div>
+            </div>
+        </div>
+        <p id="loading-message">ユーザー情報を読み込んでいます...</p>
+        <a href="/" class="secondary-btn" style="margin-top: 2rem;">トップページに戻る</a>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="/mypage.js"></script>
+</body>
+</html>

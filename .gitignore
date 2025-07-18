@@ -1,0 +1,5 @@
+# Firebaseの秘密鍵（最重要）
+serviceAccountKey.json
+
+# 大量の依存パッケージ（これも必須）
+node_modules

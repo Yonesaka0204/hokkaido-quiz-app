@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>待機ルーム</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="container">
+    <h1 id="room-title">待機中の参加者</h1>
+    <ul id="userList"></ul>
+
+    <div id="difficulty-selector">
+        <h3>難易度を選択</h3>
+        <div class="difficulty-options">
+            <input type="radio" name="difficulty" value="EASY" id="diff-easy" checked>
+            <label for="diff-easy">EASY</label>
+            <input type="radio" name="difficulty" value="NORMAL" id="diff-normal">
+            <label for="diff-normal">NORMAL</label>
+            <input type="radio" name="difficulty" value="HARD" id="diff-hard">
+            <label for="diff-hard">HARD</label>
+            <input type="radio" name="difficulty" value="SUPER" id="diff-super">
+            <label for="diff-super">SUPER</label>
+        </div>
+    </div>
+
+    <div id="format-selector">
+        <h3>解答形式を選択</h3>
+        <div class="format-options">
+            <input type="radio" name="answerFormat" value="multiple-choice" id="format-mc" checked>
+            <label for="format-mc">選択式</label>
+            <input type="radio" name="answerFormat" value="text-input" id="format-text">
+            <label for="format-text">入力式</label>
+        </div>
+    </div>
+
+    <button id="start-button">クイズ開始！</button>
+    <a href="/" class="secondary-btn" style="margin-top: 1rem;">トップページに戻る</a>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script>
+    const roomId = window.location.pathname.split('/')[2];
+    document.getElementById('room-title').textContent = `待機部屋: ${roomId}`;
+    
+    const firebaseConfig = {
+        apiKey: "AIzaSyDt92CKIkB48Bf6gXAlaeZYF7uNwT6gEp4",
+        authDomain: "quizhokkaido.firebaseapp.com",
+        projectId: "quizhokkaido",
+        storageBucket: "quizhokkaido.firebasestorage.app",
+        messagingSenderId: "570677049102",
+        appId: "1:570677049102:web:d66b9d3a1e525d2428c95f",
+        measurementId: "G-QZJDP1DB32"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    
+    const socket = io();
+
+    socket.on('connect', () => {
+        auth.onAuthStateChanged((user) => {
+            const guestName = sessionStorage.getItem('guestName');
+            if (user) {
+                user.getIdToken(true).then(idToken => {
+                    socket.emit('join-room', { roomId, idToken });
+                }).catch(error => {
+                    console.error("認証エラー:", error);
+                    alert('認証情報の取得に失敗しました。再度ログインしてください。');
+                    window.location.href = '/login';
+                });
+            } else if (guestName) {
+                socket.emit('join-room', { roomId, name: guestName });
+            } else {
+                alert('参加情報がないため、トップページに戻ります。');
+                window.location.href = '/';
+            }
+        });
+    });
+
+    socket.on('room-users', (users) => {
+        const ul = document.getElementById('userList');
+        if(!ul) return;
+        ul.innerHTML = '';
+        users.forEach(u => {
+            const li = document.createElement('li');
+            li.textContent = `${u.name} (Lv. ${u.level}) ${u.isGuest ? '(ゲスト)' : ''}`;
+            ul.appendChild(li);
+        });
+    });
+
+    const startButton = document.getElementById('start-button');
+    if (startButton) {
+        startButton.addEventListener('click', () => {
+            startButton.disabled = true;
+            startButton.textContent = 'クイズ準備中...';
+            const selectedDifficulty = document.querySelector('input[name="difficulty"]:checked').value;
+            const selectedFormat = document.querySelector('input[name="answerFormat"]:checked').value;
+            socket.emit('start-quiz', { roomId, difficulty: selectedDifficulty, answerFormat: selectedFormat });
+        });
+    }
+
+    socket.on('quiz-start', ({ roomId }) => {
+        window.location.href = `/room/${roomId}/quiz`;
+    });
+    
+    socket.on('quiz-start-failed', (data) => {
+        alert(data.message);
+        if (startButton) {
+            startButton.disabled = false;
+            startButton.textContent = 'クイズ開始！';
+        }
+    });
+
+    socket.on('join-error', (data) => {
+        alert(data.message);
+        window.location.href = '/';
+    });
+  </script>
+</body>
+</html>

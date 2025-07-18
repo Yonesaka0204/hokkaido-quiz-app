@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新規登録</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>新規登録</h1>
+        <form id="signup-form">
+            <input type="text" id="username" placeholder="ユーザー名" required class="auth-input">
+            <input type="email" id="email" placeholder="メールアドレス" required class="auth-input">
+            <input type="password" id="password" placeholder="パスワード（6文字以上）" required class="auth-input">
+            <button type="submit">登録する</button>
+        </form>
+        <p>すでにアカウントをお持ちですか？ <a href="/login">ログイン</a></p>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="/auth.js"></script>
+</body>
+</html>

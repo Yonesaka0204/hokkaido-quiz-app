@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>クイズへようこそ</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>リアルタイム地名クイズ</h1>
+        
+        <div id="logged-in-view" style="display: none;">
+            <p><span id="username-display"></span> (Lv. <span id="level-display">1</span>) さん、ようこそ！</p>
+            <form id="join-room-form-authed">
+                <p>参加する部屋IDを入力してください</p>
+                <input id="room-id-input-authed" placeholder="部屋ID" required autocomplete="off" class="auth-input">
+                <button type="submit">ログインして参加</button>
+            </form>
+            <a href="/mypage" class="auth-button" style="background-color: #28a745; margin-top: 1rem;">マイページ</a> 
+            <button id="logout-btn" class="secondary-btn" style="margin-top: 1rem;">ログアウト</button>
+        </div>
+        
+        <div id="logged-out-view" style="display: none;">
+            <div class="auth-section">
+                <p>アカウントにログインすると成績が記録されます。</p>
+                <a href="/login" class="auth-button">ログイン</a>
+                <a href="/signup" class="auth-button">新規登録</a>
+            </div>
+            <hr style="margin: 2rem 0;">
+            <form id="join-room-form-guest">
+                <p>または、ゲストとして参加できます。</p>
+                <input id="guest-name-input" placeholder="ゲスト名" required autocomplete="off" class="auth-input">
+                <input id="room-id-input-guest" placeholder="部屋ID" required autocomplete="off" class="auth-input">
+                <button type="submit">ゲストとして参加</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="/auth.js"></script>
+    <script>
+        const loggedInView = document.getElementById('logged-in-view');
+        const loggedOutView = document.getElementById('logged-out-view');
+        const usernameDisplay = document.getElementById('username-display');
+        const levelDisplay = document.getElementById('level-display');
+        const logoutBtn = document.getElementById('logout-btn');
+        const joinRoomFormAuthed = document.getElementById('join-room-form-authed');
+        const joinRoomFormGuest = document.getElementById('join-room-form-guest');
+
+        const pathRoomId = window.location.pathname.split('/')[2];
+        if (pathRoomId && pathRoomId !== 'room') {
+            document.getElementById('room-id-input-authed').value = pathRoomId;
+            document.getElementById('room-id-input-guest').value = pathRoomId;
+        }
+
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                loggedOutView.style.display = 'none';
+                loggedInView.style.display = 'block';
+
+                db.collection("users").doc(user.uid).get().then(doc => {
+                    if (doc.exists) {
+                        const userData = doc.data();
+                        usernameDisplay.textContent = userData.username;
+                        levelDisplay.textContent = userData.level || 1;
+                    }
+                }).catch(e => console.error("ユーザー情報の取得に失敗:", e));
+            } else {
+                loggedInView.style.display = 'none';
+                loggedOutView.style.display = 'block';
+            }
+        });
+
+        logoutBtn.addEventListener('click', () => {
+            auth.signOut().then(() => {
+                alert('ログアウトしました。');
+                window.location.reload();
+            });
+        });
+
+        joinRoomFormAuthed.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const roomId = document.getElementById('room-id-input-authed').value.trim();
+            if (roomId) window.location.href = `/room/${roomId}`;
+        });
+
+        joinRoomFormGuest.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const guestName = document.getElementById('guest-name-input').value.trim();
+            const roomId = document.getElementById('room-id-input-guest').value.trim();
+            if (roomId && guestName) {
+                sessionStorage.setItem('guestName', guestName);
+                window.location.href = `/room/${roomId}`;
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>最終結果</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>最終結果</h1>
+        <ol id="results-list" style="text-align: left; padding-left: 3rem;"></ol>
+        <a id="back-to-room-link" href="#" class="auth-button">同じ部屋で再挑戦</a>
+        <a id="back-to-top-link" href="/" class="secondary-btn" style="margin-top: 1rem;">トップページに戻る</a>
+    </div>
+
+    <script>
+        (() => {
+            const resultsList = document.getElementById('results-list');
+            const finalResults = JSON.parse(sessionStorage.getItem('finalResults'));
+
+            if (finalResults) {
+                finalResults.forEach(result => {
+                    const li = document.createElement('li');
+                    li.style.fontSize = "1.2rem";
+                    li.style.marginBottom = "0.5rem";
+                    li.textContent = `${result.name}: ${result.score}問正解`;
+                    resultsList.appendChild(li);
+                });
+            } else {
+                resultsList.innerHTML = '<li>結果の表示に失敗しました。再挑戦リンクから部屋に戻ってください。</li>';
+            }
+            sessionStorage.removeItem('finalResults');
+            sessionStorage.removeItem('guestName');
+
+            const pathParts = window.location.pathname.split('/');
+            const roomId = pathParts[2];
+            const backLink = document.getElementById('back-to-room-link');
+
+            if (backLink) {
+                if (roomId) {
+                    backLink.href = `/room/${roomId}`;
+                } else {
+                    backLink.style.display = 'none';
+                }
+            }
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>クイズ挑戦中！</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div class="container">
+        <p id="progress" style="font-size: 1.2rem; font-weight: bold;"></p>
+        <h2 id="question">クイズの開始を待っています...</h2>
+        <div id="options-container"></div>
+        <div id="result"></div>
+    </div>
+    <button id="back-to-lobby-btn" class="secondary-btn">ロビーに戻る</button>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script>
+        const roomId = window.location.pathname.split('/')[2];
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyDt92CKIkB48Bf6gXAlaeZYF7uNwT6gEp4",
+            authDomain: "quizhokkaido.firebaseapp.com",
+            projectId: "quizhokkaido",
+            storageBucket: "quizhokkaido.firebasestorage.app",
+            messagingSenderId: "570677049102",
+            appId: "1:570677049102:web:d66b9d3a1e525d2428c95f",
+            measurementId: "G-QZJDP1DB32"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const socket = io();
+
+        let nextQuestionTimer = null;
+        let hasProceeded = false;
+
+        const progressEl = document.getElementById('progress');
+        const questionEl = document.getElementById('question');
+        const optionsContainer = document.getElementById('options-container');
+        const resultEl = document.getElementById('result');
+        const backToLobbyBtn = document.getElementById('back-to-lobby-btn');
+
+        // --- 接続時の処理 ---
+        socket.on('connect', () => {
+            auth.onAuthStateChanged((user) => {
+                const guestName = sessionStorage.getItem('guestName');
+                if (user) {
+                    user.getIdToken(true).then(idToken => {
+                        socket.emit('player-ready', { roomId, idToken });
+                    }).catch(err => { window.location.href = '/login'; });
+                } else if (guestName) {
+                    socket.emit('player-ready', { roomId, name: guestName });
+                } else {
+                    window.location.href = '/';
+                }
+            });
+        });
+
+        if(backToLobbyBtn) {
+            backToLobbyBtn.addEventListener('click', () => {
+                if (confirm('クイズを中断して全員でロビーに戻りますか？')) {
+                    socket.emit('return-to-lobby', { roomId });
+                }
+            });
+        }
+
+        // --- 新しい問題の受付 ---
+        socket.on('new-question', (data) => {
+            hasProceeded = false;
+            resultEl.innerHTML = '';
+            optionsContainer.innerHTML = '';
+            questionEl.style.display = 'block';
+            if(backToLobbyBtn) backToLobbyBtn.disabled = false;
+            
+            progressEl.textContent = `第 ${data.questionNumber} / ${data.totalQuestions} 問`;
+            questionEl.textContent = data.question.question;
+
+            if (data.answerFormat === 'multiple-choice') {
+                data.options.forEach(optionText => {
+                    const button = document.createElement('button');
+                    button.textContent = optionText;
+                    button.className = 'option-btn';
+                    button.addEventListener('click', () => handleSubmit(optionText, data.question.question));
+                    optionsContainer.appendChild(button);
+                });
+            } else {
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.id = 'answer-input';
+                input.placeholder = 'ひらがなで入力';
+                input.autocomplete = 'off';
+                const submitButton = document.createElement('button');
+                submitButton.textContent = '解答する';
+                submitButton.className = 'option-btn';
+                const submitHandler = () => handleSubmit(input.value, data.question.question);
+                submitButton.addEventListener('click', submitHandler);
+                input.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') { e.preventDefault(); submitHandler(); }
+                });
+                optionsContainer.appendChild(input);
+                optionsContainer.appendChild(submitButton);
+                input.focus();
+            }
+        });
+
+        function handleSubmit(answer, questionText) {
+            if (!answer || !answer.trim()) return;
+            socket.emit('submit-answer', { roomId, answer, questionText });
+            Array.from(optionsContainer.children).forEach(child => child.disabled = true);
+        }
+        
+        // --- 結果表示のロジック ---
+        socket.on('answer-result', ({ correct, correctAnswer, trivia }) => {
+            questionEl.style.display = 'none';
+            optionsContainer.innerHTML = '';
+            resultEl.innerHTML = ''; // 以前の結果をクリア
+
+            // --- UI要素を動的に生成 ---
+            const resultContainer = document.createElement('div');
+            resultContainer.className = 'result-container';
+
+            const verdictEl = document.createElement('h3');
+            verdictEl.className = 'result-verdict';
+            resultContainer.appendChild(verdictEl);
+
+            if (correct) {
+                verdictEl.textContent = '正解！';
+                verdictEl.classList.add('correct');
+            } else {
+                verdictEl.textContent = '残念！';
+                verdictEl.classList.add('incorrect');
+                const correctAnswerEl = document.createElement('p');
+                correctAnswerEl.className = 'result-correct-answer';
+                correctAnswerEl.innerHTML = `正解は「<span>${correctAnswer}</span>」でした。`;
+                resultContainer.appendChild(correctAnswerEl);
+            }
+            
+            const triviaContainer = document.createElement('div');
+            triviaContainer.className = 'result-trivia';
+            triviaContainer.innerHTML = `<div class="result-trivia-title">【豆知識】</div><p class="result-trivia-body">${trivia}</p>`;
+            resultContainer.appendChild(triviaContainer);
+
+            const promptEl = document.createElement('p');
+            promptEl.id = 'result-prompt';
+            promptEl.className = 'result-prompt';
+            promptEl.textContent = '他のプレイヤーの回答を待っています...';
+            resultContainer.appendChild(promptEl);
+            
+            resultEl.appendChild(resultContainer);
+        });
+
+        // --- 全員の回答完了後の処理 ---
+        socket.on('all-answers-in', () => {
+            const promptEl = document.getElementById('result-prompt');
+            if (promptEl) {
+                promptEl.textContent = 'クリック、または Enterキーで次に進みます (7秒後に自動進行)';
+                promptEl.style.color = '#3498db';
+            }
+            startProceedTimer();
+        });
+
+        // --- 次の問題へ進むためのロジック ---
+        function proceedToNext() {
+            if (hasProceeded) return;
+            hasProceeded = true;
+
+            clearTimeout(nextQuestionTimer);
+            document.removeEventListener('click', proceedToNext);
+            document.removeEventListener('keydown', handleKeydown);
+
+            resultEl.textContent = '次の問題を待っています...';
+            socket.emit('ready-for-next-question', { roomId });
+        }
+
+        function handleKeydown(e) {
+            if (e.key === 'Enter') {
+                proceedToNext();
+            }
+        }
+
+        function startProceedTimer() {
+            nextQuestionTimer = setTimeout(proceedToNext, 7000);
+            document.addEventListener('click', proceedToNext);
+            document.addEventListener('keydown', handleKeydown);
+        }
+
+        // --- その他のイベントハンドラ ---
+        socket.on('lobby-redirect', (targetRoomId) => {
+            alert('クイズが中断されました。ロビーに戻ります。');
+            window.location.href = `/room/${targetRoomId}`;
+        });
+
+        socket.on('quiz-end', ({ finalResults, roomId }) => {
+            resultEl.textContent = 'クイズ終了！結果画面に移動します...';
+            sessionStorage.setItem('finalResults', JSON.stringify(finalResults));
+            window.location.href = `/room/${roomId}/results`;
+        });
+
+        socket.on('join-error', (data) => {
+            alert(data.message);
+            window.location.href = '/';
+        });
+    </script>
+</body>
+</html>
