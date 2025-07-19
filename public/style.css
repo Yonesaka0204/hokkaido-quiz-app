@@ -199,6 +199,7 @@ button:disabled {
     background-color: #007bff;
     color: white;
     border-radius: 5px;
+    margin: 0.5rem;
     border: none;
     cursor: pointer;
 }
@@ -322,4 +323,34 @@ button:disabled {
         opacity: 1;
         transform: translateY(0);
     }
+}
+
+/* --- ランキングのページネーション用スタイル --- */
+.pagination-controls {
+    margin-top: 1.5rem;
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.pagination-btn {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #ddd;
+    background-color: #fff;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.2s, color 0.2s;
+    font-size: 1rem;
+}
+
+.pagination-btn:hover {
+    background-color: #f0f0f0;
+}
+
+.pagination-btn.active {
+    background-color: #3498db;
+    color: white;
+    border-color: #3498db;
+    font-weight: bold;
 }
