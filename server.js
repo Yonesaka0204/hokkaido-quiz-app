@@ -574,9 +574,24 @@ function sendNextQuestion(roomId) {
 
     if (state.answerFormat === 'multiple-choice') {
         const correctAnswer = question.answer;
-        const dummyOptions = question.dummies || [];
-        const options = [correctAnswer, ...dummyOptions].sort(() => 0.5 - Math.random());
-        questionDataToSend.options = options;
+        const hardcodedDummies = question.dummies || [];
+
+        let options = new Set([correctAnswer, ...hardcodedDummies]);
+
+        if (options.size < 3) {
+            const allPossibleDummies = allQuizData
+                .map(q => q.answer)
+                .filter(ans => !options.has(ans));
+
+            while (options.size < 3 && allPossibleDummies.length > 0) {
+                const randomIndex = Math.floor(Math.random() * allPossibleDummies.length);
+                const randomDummy = allPossibleDummies.splice(randomIndex, 1)[0];
+                options.add(randomDummy);
+            }
+        }
+        
+        const finalOptions = [...options].sort(() => 0.5 - Math.random());
+        questionDataToSend.options = finalOptions;
     }
     io.to(roomId).emit('new-question', questionDataToSend);
 }
