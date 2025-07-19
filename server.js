@@ -5,7 +5,6 @@ const path = require('path');
 const admin = require('firebase-admin');
 
 try {
-    // Renderの環境変数から認証情報を読み込むように修正
     const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
     if (!serviceAccountString) {
         throw new Error('Firebaseの認証情報が環境変数に設定されていません。');
@@ -368,21 +367,36 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('start-quiz', ({ roomId, difficulty, answerFormat }) => {
+    socket.on('start-quiz', ({ roomId, difficulty, answerFormat, isRanked }) => {
         const room = rooms[roomId];
         if (!room || room.quizState.isActive) return;
 
         const state = room.quizState;
         state.playerCount = room.users.length;
         if (state.playerCount === 0) return;
+        
+        if (isRanked) {
+            const loggedInUsers = room.users.filter(u => !u.isGuest);
+            if (loggedInUsers.length < 2) {
+                socket.emit('quiz-start-failed', { message: `レートマッチはログインユーザーが2人以上いる場合にのみ開始できます。` });
+                return;
+            }
+        }
+        
+        let filteredQuestions;
+        if (difficulty === 'RANDOM') {
+            filteredQuestions = [...allQuizData];
+        } else {
+            filteredQuestions = allQuizData.filter(q => q.difficulty === difficulty);
+        }
 
-        const filteredQuestions = allQuizData.filter(q => q.difficulty === difficulty);
-        if (filteredQuestions.length === 0) {
-            socket.emit('quiz-start-failed', { message: `難易度「${difficulty}」の問題が見つかりませんでした。` });
+        if (filteredQuestions.length < 10) {
+            socket.emit('quiz-start-failed', { message: `選択された難易度の問題が10問未満のため、クイズを開始できません。` });
             return;
         }
 
         state.isActive = true;
+        state.isRanked = isRanked;
         state.answerFormat = answerFormat;
         state.questions = [...filteredQuestions].sort(() => 0.5 - Math.random()).slice(0, 10);
         state.currentQuestionIndex = 0;
@@ -551,7 +565,7 @@ async function endQuiz(roomId) {
     const ratedPlayers = finalResults.filter(p => !p.isGuest);
     const ratingChanges = {};
 
-    if (ratedPlayers.length >= 2) {
+    if (state.isRanked && ratedPlayers.length >= 2) {
         const K = 32;
 
         for (const playerA of ratedPlayers) {
@@ -623,10 +637,15 @@ async function endQuiz(roomId) {
 function resetQuizState(roomId) {
     if (rooms[roomId]) {
         rooms[roomId].quizState = {
-            isActive: false, questions: [], currentQuestionIndex: 0, scores: {},
+            isActive: false,
+            isRanked: false,
+            questions: [], 
+            currentQuestionIndex: 0, 
+            scores: {},
             answersReceived: 0, 
             readyPlayers: new Set(),
-            answerFormat: 'multiple-choice', playerCount: 0
+            answerFormat: 'multiple-choice', 
+            playerCount: 0
         };
     }
 }

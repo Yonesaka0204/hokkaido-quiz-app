@@ -22,6 +22,8 @@
             <label for="diff-hard">HARD</label>
             <input type="radio" name="difficulty" value="SUPER" id="diff-super">
             <label for="diff-super">SUPER</label>
+            <input type="radio" name="difficulty" value="RANDOM" id="diff-random">
+            <label for="diff-random">ランダム</label>
         </div>
     </div>
 
@@ -35,7 +37,11 @@
         </div>
     </div>
 
-    <button id="start-button">クイズ開始！</button>
+    <div id="match-type-selector" style="margin-top: 2rem;">
+        <button id="start-ranked-button" class="auth-button">レートマッチで開始！</button>
+        <button id="start-free-button" class="auth-button" style="background-color: #27ae60;">フリーマッチで開始</button>
+    </div>
+    
     <a href="/" class="secondary-btn" style="margin-top: 1rem;">トップページに戻る</a>
   </div>
 
@@ -91,15 +97,29 @@
         });
     });
 
-    const startButton = document.getElementById('start-button');
-    if (startButton) {
-        startButton.addEventListener('click', () => {
-            startButton.disabled = true;
-            startButton.textContent = 'クイズ準備中...';
-            const selectedDifficulty = document.querySelector('input[name="difficulty"]:checked').value;
-            const selectedFormat = document.querySelector('input[name="answerFormat"]:checked').value;
-            socket.emit('start-quiz', { roomId, difficulty: selectedDifficulty, answerFormat: selectedFormat });
+    const startRankedButton = document.getElementById('start-ranked-button');
+    const startFreeButton = document.getElementById('start-free-button');
+
+    function startQuiz(isRanked) {
+        startRankedButton.disabled = true;
+        startFreeButton.disabled = true;
+        startRankedButton.textContent = '準備中...';
+        startFreeButton.textContent = '準備中...';
+
+        const selectedDifficulty = document.querySelector('input[name="difficulty"]:checked').value;
+        const selectedFormat = document.querySelector('input[name="answerFormat"]:checked').value;
+        
+        socket.emit('start-quiz', { 
+            roomId, 
+            difficulty: selectedDifficulty, 
+            answerFormat: selectedFormat,
+            isRanked: isRanked
         });
+    }
+
+    if (startRankedButton && startFreeButton) {
+        startRankedButton.addEventListener('click', () => startQuiz(true));
+        startFreeButton.addEventListener('click', () => startQuiz(false));
     }
 
     socket.on('quiz-start', ({ roomId }) => {
@@ -108,9 +128,11 @@
     
     socket.on('quiz-start-failed', (data) => {
         alert(data.message);
-        if (startButton) {
-            startButton.disabled = false;
-            startButton.textContent = 'クイズ開始！';
+        if (startRankedButton && startFreeButton) {
+            startRankedButton.disabled = false;
+            startFreeButton.disabled = false;
+            startRankedButton.textContent = 'レートマッチで開始！';
+            startFreeButton.textContent = 'フリーマッチで開始';
         }
     });
 
