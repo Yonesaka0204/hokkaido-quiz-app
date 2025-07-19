@@ -7,6 +7,11 @@
     <link rel="stylesheet" href="/style.css">
 </head>
 <body>
+    <div id="player-status-container" style="display: none;">
+        <h3>参加者ステータス</h3>
+        <ul id="player-status-list"></ul>
+    </div>
+
     <div class="container">
         <p id="progress" style="font-size: 1.2rem; font-weight: bold;"></p>
         <h2 id="question">クイズの開始を待っています...</h2>
@@ -42,6 +47,8 @@
         const optionsContainer = document.getElementById('options-container');
         const resultEl = document.getElementById('result');
         const backToLobbyBtn = document.getElementById('back-to-lobby-btn');
+        const playerStatusContainer = document.getElementById('player-status-container');
+        const playerStatusList = document.getElementById('player-status-list');
 
         // --- 接続時の処理 ---
         socket.on('connect', () => {
@@ -78,6 +85,16 @@
             progressEl.textContent = `第 ${data.questionNumber} / ${data.totalQuestions} 問`;
             questionEl.textContent = data.question.question;
 
+            // 参加者ステータス欄を更新
+            playerStatusContainer.style.display = 'block';
+            playerStatusList.innerHTML = '';
+            data.users.forEach(user => {
+                const li = document.createElement('li');
+                li.id = 'status-' + user.name;
+                li.innerHTML = `<span class="player-name">${user.name}</span><span class="player-answer-status">回答待...</span>`;
+                playerStatusList.appendChild(li);
+            });
+
             if (data.answerFormat === 'multiple-choice') {
                 data.options.forEach(optionText => {
                     const button = document.createElement('button');
@@ -112,13 +129,25 @@
             Array.from(optionsContainer.children).forEach(child => child.disabled = true);
         }
         
-        // --- 結果表示のロジック ---
+        socket.on('player-answered', ({ name, isCorrect }) => {
+            const playerLi = document.getElementById('status-' + name);
+            if (playerLi) {
+                const statusSpan = playerLi.querySelector('.player-answer-status');
+                if (isCorrect) {
+                    statusSpan.textContent = '正解';
+                    statusSpan.classList.add('correct');
+                } else {
+                    statusSpan.textContent = '不正解';
+                    statusSpan.classList.add('incorrect');
+                }
+            }
+        });
+
         socket.on('answer-result', ({ correct, correctAnswer, trivia }) => {
             questionEl.style.display = 'none';
             optionsContainer.innerHTML = '';
-            resultEl.innerHTML = ''; // 以前の結果をクリア
+            resultEl.innerHTML = '';
 
-            // --- UI要素を動的に生成 ---
             const resultContainer = document.createElement('div');
             resultContainer.className = 'result-container';
 
@@ -152,7 +181,6 @@
             resultEl.appendChild(resultContainer);
         });
 
-        // --- 全員の回答完了後の処理 ---
         socket.on('all-answers-in', () => {
             const promptEl = document.getElementById('result-prompt');
             if (promptEl) {
@@ -162,7 +190,6 @@
             startProceedTimer();
         });
 
-        // --- 次の問題へ進むためのロジック ---
         function proceedToNext() {
             if (hasProceeded) return;
             hasProceeded = true;
@@ -187,13 +214,13 @@
             document.addEventListener('keydown', handleKeydown);
         }
 
-        // --- その他のイベントハンドラ ---
         socket.on('lobby-redirect', (targetRoomId) => {
             alert('クイズが中断されました。ロビーに戻ります。');
             window.location.href = `/room/${targetRoomId}`;
         });
 
         socket.on('quiz-end', ({ finalResults, roomId }) => {
+            playerStatusContainer.style.display = 'none';
             resultEl.textContent = 'クイズ終了！結果画面に移動します...';
             sessionStorage.setItem('finalResults', JSON.stringify(finalResults));
             window.location.href = `/room/${roomId}/results`;

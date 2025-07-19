@@ -470,6 +470,11 @@ io.on('connection', (socket) => {
                 trivia: question.trivia 
             });
 
+            const player = room.users.find(u => u.id === socket.id);
+            if (player) {
+                io.to(roomId).emit('player-answered', { name: player.name, isCorrect });
+            }
+
             state.answersReceived++;
             if (state.answersReceived >= room.users.length) {
                 io.to(roomId).emit('all-answers-in');
@@ -569,7 +574,8 @@ function sendNextQuestion(roomId) {
         question: { question: question.question },
         questionNumber: state.currentQuestionIndex + 1,
         totalQuestions: state.questions.length,
-        answerFormat: state.answerFormat
+        answerFormat: state.answerFormat,
+        users: room.users
     };
 
     if (state.answerFormat === 'multiple-choice') {
