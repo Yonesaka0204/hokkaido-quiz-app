@@ -327,6 +327,7 @@ app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public/index.html'
 app.get('/login', (req, res) => res.sendFile(path.join(__dirname, 'public/login.html')));
 app.get('/signup', (req, res) => res.sendFile(path.join(__dirname, 'public/signup.html')));
 app.get('/mypage', (req, res) => res.sendFile(path.join(__dirname, 'public/mypage.html')));
+app.get('/ranking', (req, res) => res.sendFile(path.join(__dirname, 'public/ranking.html')));
 app.get('/room/:roomId', (req, res) => res.sendFile(path.join(__dirname, 'public/room.html')));
 app.get('/room/:roomId/quiz', (req, res) => res.sendFile(path.join(__dirname, 'public/quiz.html')));
 app.get('/room/:roomId/results', (req, res) => res.sendFile(path.join(__dirname, 'public/results.html')));
@@ -493,6 +494,39 @@ io.on('connection', (socket) => {
             } else {
                 endQuiz(roomId);
             }
+        }
+    });
+
+    socket.on('get-rankings', async () => {
+        try {
+            const levelSnapshot = await db.collection('users')
+                                            .orderBy('level', 'desc')
+                                            .orderBy('xp', 'desc')
+                                            .limit(100)
+                                            .get();
+            const levelRanking = levelSnapshot.docs.map(doc => ({
+                username: doc.data().username,
+                level: doc.data().level
+            }));
+
+            const ratingSnapshot = await db.collection('users')
+                                             .orderBy('rating', 'desc')
+                                             .limit(100)
+                                             .get();
+            const ratingRanking = ratingSnapshot.docs.map(doc => ({
+                username: doc.data().username,
+                rating: doc.data().rating
+            }));
+
+            socket.emit('rankings-data', { levelRanking, ratingRanking });
+
+        } catch (error) {
+            console.error("ランキングデータの取得に失敗:", error);
+            const urlMatch = error.message.match(/(https?:\/\/[^\s]+)/);
+            if (urlMatch) {
+                console.error("Firestoreの複合インデックスが必要です。以下のURLにアクセスしてインデックスを作成してください:\n", urlMatch[0]);
+            }
+            socket.emit('rankings-error', { message: 'ランキングデータの取得に失敗しました。' });
         }
     });
 

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ランキング</title>
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        .ranking-container {
+            display: flex;
+            justify-content: space-around;
+            gap: 2rem;
+            width: 100%;
+            max-width: 800px;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+        }
+        .ranking-box {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            width: 45%;
+            min-width: 300px;
+        }
+        .ranking-box h2 {
+            margin-top: 0;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 0.5rem;
+        }
+        .ranking-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        .ranking-list li {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0.5rem;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 1.1rem;
+        }
+        .ranking-list li:nth-child(1) { font-weight: bold; color: #e67e22; }
+        .ranking-list li:nth-child(2) { font-weight: bold; color: #7f8c8d; }
+        .ranking-list li:nth-child(3) { font-weight: bold; color: #cd7f32; }
+        .rank-number {
+            margin-right: 1rem;
+        }
+        .rank-name {
+            flex-grow: 1;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" style="max-width: 900px;">
+        <h1>ランキング</h1>
+        <p>全プレイヤーの上位100名を表示しています。</p>
+        <div class="ranking-container">
+            <div class="ranking-box">
+                <h2>レベルランキング</h2>
+                <ol id="level-ranking-list" class="ranking-list"></ol>
+            </div>
+            <div class="ranking-box">
+                <h2>レートランキング</h2>
+                <ol id="rating-ranking-list" class="ranking-list"></ol>
+            </div>
+        </div>
+        <a href="/" class="secondary-btn" style="margin-top: 2rem;">トップページに戻る</a>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/ranking.js"></script>
+</body>
+</html>
