@@ -328,6 +328,7 @@ app.get('/login', (req, res) => res.sendFile(path.join(__dirname, 'public/login.
 app.get('/signup', (req, res) => res.sendFile(path.join(__dirname, 'public/signup.html')));
 app.get('/mypage', (req, res) => res.sendFile(path.join(__dirname, 'public/mypage.html')));
 app.get('/ranking', (req, res) => res.sendFile(path.join(__dirname, 'public/ranking.html')));
+app.get('/health', (req, res) => res.sendStatus(200));
 app.get('/room/:roomId', (req, res) => res.sendFile(path.join(__dirname, 'public/room.html')));
 app.get('/room/:roomId/quiz', (req, res) => res.sendFile(path.join(__dirname, 'public/quiz.html')));
 app.get('/room/:roomId/results', (req, res) => res.sendFile(path.join(__dirname, 'public/results.html')));
