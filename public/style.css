@@ -407,26 +407,43 @@ button:disabled {
     color: #e74c3c;
 }
 
-/* --- New Slide-out Chat Styles --- */
+/* --- New Slide-out Chat with Content Push --- */
+.container, #player-status-container {
+    transition: transform 0.3s ease-in-out;
+}
+
+body.chat-is-open .container,
+body.chat-is-open #player-status-container {
+    transform: translateX(-320px);
+}
+
+.main-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 1rem;
+}
+
 #chat-toggle-btn {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 60px;
-    height: 60px;
+    width: 50px;
+    height: 50px;
     border-radius: 50%;
     background-color: #3498db;
     color: white;
-    font-size: 1.5rem;
     border: none;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
     cursor: pointer;
     z-index: 1000;
     display: flex;
     justify-content: center;
     align-items: center;
     padding: 0;
-    margin: 0;
+    margin: 0 0 0 1rem;
+    flex-shrink: 0;
+}
+#chat-toggle-btn:hover {
+    background-color: #2980b9;
 }
 
 #chat-panel {

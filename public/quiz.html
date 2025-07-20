@@ -13,14 +13,21 @@
     </div>
 
     <div class="container">
-        <p id="progress" style="font-size: 1.2rem; font-weight: bold;"></p>
+        <div class="main-header">
+            <p id="progress" style="font-size: 1.2rem; font-weight: bold; margin: 0;"></p>
+            <button id="chat-toggle-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="white">
+                    <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
+                </svg>
+            </button>
+        </div>
+        
         <h2 id="question">クイズの開始を待っています...</h2>
         <div id="options-container"></div>
         <div id="result"></div>
     </div>
     <button id="back-to-lobby-btn" class="secondary-btn">ロビーに戻る</button>
 
-    <button id="chat-toggle-btn">💬</button>
     <div id="chat-panel">
         <h3>チャット</h3>
         <div id="chat-messages"></div>
@@ -247,6 +254,7 @@
         if (chatToggleBtn) {
             chatToggleBtn.addEventListener('click', () => {
                 chatPanel.classList.toggle('is-open');
+                document.body.classList.toggle('chat-is-open');
             });
         }
 
