@@ -18,16 +18,17 @@
         <div id="options-container"></div>
         <div id="result"></div>
     </div>
+    <button id="back-to-lobby-btn" class="secondary-btn">ロビーに戻る</button>
 
-    <div id="chat-container" style="max-width: 550px; margin-top: 1rem;">
+    <button id="chat-toggle-btn">💬</button>
+    <div id="chat-panel">
+        <h3>チャット</h3>
         <div id="chat-messages"></div>
         <form id="chat-form">
             <input id="chat-input" autocomplete="off" placeholder="メッセージを入力..." />
             <button type="submit">送信</button>
         </form>
     </div>
-
-    <button id="back-to-lobby-btn" class="secondary-btn">ロビーに戻る</button>
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -237,9 +238,17 @@
             window.location.href = '/';
         });
 
+        const chatToggleBtn = document.getElementById('chat-toggle-btn');
+        const chatPanel = document.getElementById('chat-panel');
         const chatForm = document.getElementById('chat-form');
         const chatInput = document.getElementById('chat-input');
         const chatMessages = document.getElementById('chat-messages');
+
+        if (chatToggleBtn) {
+            chatToggleBtn.addEventListener('click', () => {
+                chatPanel.classList.toggle('is-open');
+            });
+        }
 
         if (chatForm) {
             chatForm.addEventListener('submit', (e) => {

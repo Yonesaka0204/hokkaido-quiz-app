@@ -404,6 +404,7 @@ io.on('connection', (socket) => {
 
         state.isActive = true;
         state.isRanked = isRanked;
+        state.difficulty = difficulty;
         state.answerFormat = answerFormat;
         state.questions = [...filteredQuestions].sort(() => 0.5 - Math.random()).slice(0, 10);
         state.currentQuestionIndex = 0;
@@ -684,6 +685,20 @@ async function endQuiz(roomId) {
                     let updateData = {};
 
                     const score = state.scores[user.id] || 0;
+                    
+                    if (score === 10) {
+                        const difficulty = state.difficulty;
+                        updateData[`achievements.perfectCounts.${difficulty}`] = admin.firestore.FieldValue.increment(1);
+
+                        if (difficulty === 'RANDOM') {
+                            if (state.answerFormat === 'multiple-choice') {
+                                updateData['achievements.perfectRandomSelect'] = true;
+                            } else if (state.answerFormat === 'text-input') {
+                                updateData['achievements.perfectRandomInput'] = true;
+                            }
+                        }
+                    }
+
                     if (score > 0) {
                         let xpGained = 10 + (score * 5);
                         if (state.answerFormat === 'text-input') {
@@ -726,6 +741,7 @@ function resetQuizState(roomId) {
         rooms[roomId].quizState = {
             isActive: false,
             isRanked: false,
+            difficulty: 'EASY',
             questions: [], 
             currentQuestionIndex: 0, 
             scores: {},

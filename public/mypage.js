@@ -25,6 +25,14 @@ const ratingDisplay = document.getElementById('rating-display');
 const xpDisplay = document.getElementById('xp-display');
 const xpNextDisplay = document.getElementById('xp-next-display');
 const xpProgress = document.getElementById('xp-progress');
+const achievementsCard = document.getElementById('achievements-card');
+const achRandomSelect = document.getElementById('ach-random-select');
+const achRandomInput = document.getElementById('ach-random-input');
+const countEasy = document.getElementById('count-easy');
+const countNormal = document.getElementById('count-normal');
+const countHard = document.getElementById('count-hard');
+const countSuper = document.getElementById('count-super');
+const countRandom = document.getElementById('count-random');
 
 // ログイン状態を監視
 auth.onAuthStateChanged(user => {
@@ -38,7 +46,7 @@ auth.onAuthStateChanged(user => {
                 const currentRating = data.rating || 1500;
                 const currentXp = data.xp || 0;
 
-                // 次のレベルに必要なXPを計算 (サーバー側と同じロジック)
+                // 次のレベルに必要なXPを計算
                 const xpForNextLevel = Math.floor(100 * Math.pow(currentLevel, 1.5));
                 const progressPercentage = Math.min((currentXp / xpForNextLevel) * 100, 100);
 
@@ -49,10 +57,26 @@ auth.onAuthStateChanged(user => {
                 xpDisplay.textContent = currentXp;
                 xpNextDisplay.textContent = `${currentXp} / ${xpForNextLevel}`;
                 
-                // プログレスバーを更新
                 xpProgress.style.width = `${progressPercentage}%`;
                 xpProgress.textContent = `${Math.floor(progressPercentage)}%`;
                 
+                // 実績表示の処理
+                if (data.achievements) {
+                    const achData = data.achievements;
+                    const counts = achData.perfectCounts || {};
+                    
+                    achRandomSelect.textContent = achData.perfectRandomSelect ? '🏆 達成済み' : '未達成';
+                    achRandomInput.textContent = achData.perfectRandomInput ? '🏆 達成済み' : '未達成';
+
+                    countEasy.textContent = (counts.EASY || 0) + ' 回';
+                    countNormal.textContent = (counts.NORMAL || 0) + ' 回';
+                    countHard.textContent = (counts.HARD || 0) + ' 回';
+                    countSuper.textContent = (counts.SUPER || 0) + ' 回';
+                    countRandom.textContent = (counts.RANDOM || 0) + ' 回';
+
+                    achievementsCard.style.display = 'block';
+                }
+
                 // 表示を切り替え
                 loadingMessage.style.display = 'none';
                 userStatusDiv.style.display = 'block';

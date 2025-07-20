@@ -42,15 +42,17 @@
         <button id="start-free-button" class="auth-button" style="background-color: #27ae60;">フリーマッチで開始</button>
     </div>
     
-    <div id="chat-container">
-        <div id="chat-messages"></div>
-        <form id="chat-form">
-            <input id="chat-input" autocomplete="off" placeholder="メッセージを入力..." />
-            <button type="submit">送信</button>
-        </form>
-    </div>
-
     <a href="/" class="secondary-btn" style="margin-top: 1rem;">トップページに戻る</a>
+  </div>
+
+  <button id="chat-toggle-btn">💬</button>
+  <div id="chat-panel">
+      <h3>チャット</h3>
+      <div id="chat-messages"></div>
+      <form id="chat-form">
+          <input id="chat-input" autocomplete="off" placeholder="メッセージを入力..." />
+          <button type="submit">送信</button>
+      </form>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
@@ -149,9 +151,17 @@
         window.location.href = '/';
     });
 
+    const chatToggleBtn = document.getElementById('chat-toggle-btn');
+    const chatPanel = document.getElementById('chat-panel');
     const chatForm = document.getElementById('chat-form');
     const chatInput = document.getElementById('chat-input');
     const chatMessages = document.getElementById('chat-messages');
+
+    if (chatToggleBtn) {
+        chatToggleBtn.addEventListener('click', () => {
+            chatPanel.classList.toggle('is-open');
+        });
+    }
 
     if (chatForm) {
         chatForm.addEventListener('submit', (e) => {

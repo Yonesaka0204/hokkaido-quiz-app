@@ -42,6 +42,17 @@ const firebaseConfig = {
                       xp: 0,
                       rating: 1500,
                       totalCorrect: 0,
+                      achievements: {
+                          perfectRandomSelect: false,
+                          perfectRandomInput: false,
+                          perfectCounts: {
+                              EASY: 0,
+                              NORMAL: 0,
+                              HARD: 0,
+                              SUPER: 0,
+                              RANDOM: 0
+                          }
+                      },
                       createdAt: firebase.firestore.FieldValue.serverTimestamp()
                   });
               })
