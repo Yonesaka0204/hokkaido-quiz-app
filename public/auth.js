@@ -65,7 +65,13 @@ const firebaseConfig = {
                   alert('ログインしました！');
                   window.location.href = '/';
               })
-              .catch(showAuthError);
+              .catch(error => {
+                  if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+                      alert('メールアドレスかパスワードが間違っています。');
+                  } else {
+                      showAuthError(error);
+                  }
+              });
       });
   }
 
@@ -73,7 +79,7 @@ const firebaseConfig = {
   const forgotPasswordLink = document.getElementById('forgot-password-link');
   if (forgotPasswordLink) {
       forgotPasswordLink.addEventListener('click', (e) => {
-          e.preventDefault(); // リンクの通常の動作を防ぐ
+          e.preventDefault();
           
           const email = prompt("パスワードをリセットしたいアカウントのメールアドレスを入力してください。");
           

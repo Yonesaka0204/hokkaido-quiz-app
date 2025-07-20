@@ -334,6 +334,11 @@ app.get('/room/:roomId/results', (req, res) => res.sendFile(path.join(__dirname,
 
 io.on('connection', (socket) => {
     socket.on('join-room', async ({ roomId, idToken, name }) => {
+        if (rooms[roomId] && rooms[roomId].quizState.isActive) {
+            socket.emit('join-error', { message: '現在クイズが進行中のため、入室できません。' });
+            return;
+        }
+
         try {
             let userProfile;
             if (idToken) {
