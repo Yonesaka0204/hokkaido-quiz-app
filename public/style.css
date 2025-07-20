@@ -483,3 +483,27 @@ body.chat-is-open #player-status-container {
 #chat-panel #chat-form {
     margin-top: 1rem;
 }
+
+/* --- スマホ表示用の調整 --- */
+@media (max-width: 600px) {
+
+    /* 参加者ステータスを画面上部に移動 */
+    #player-status-container {
+        width: auto; /* 横幅を自動調整 */
+        left: 10px;
+        right: 10px;
+        top: 10px;
+        transform: translateX(0) !important; /* スライド効果を無効化 */
+    }
+
+    /* メインコンテンツがステータス欄に隠れないよう、下にずらす */
+    .container {
+        margin-top: 120px; /* ステータス欄の高さに応じて調整 */
+    }
+
+    /* チャットパネルが開いた際の動きを調整 */
+    body.chat-is-open .container {
+        /* 横幅が狭いため、コンテンツのスライドは行わない（チャットが上に重なる） */
+        transform: translateX(0) !important;
+    }
+}
