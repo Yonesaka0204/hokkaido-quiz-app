@@ -85,7 +85,7 @@ const allQuizData = [
     { question: "夕張市", answer: "ゆうばりし", difficulty: "EASY", dummies: ["せきちょうし", "ゆばりし"], trivia: "「夕張メロン」の産地として全国的に有名。かつては炭鉱で栄えた。" },
     { question: "陸別町", answer: "りくべつちょう", difficulty: "EASY", dummies: ["ろくべつちょう", "りくわけちょう"], trivia: "冬には-30℃を下回ることもあり、「日本で一番寒い町」として知られる。" },
     { question: "利尻町", answer: "りしりちょう", difficulty: "EASY", dummies: ["りじりちょう", "りしりまち"], trivia: "利尻昆布の産地として有名で、島の中心には利尻山がそびえる。" },
-    { question: "利尻富士町", answer: "りしりふじちょう", difficulty: "EASY", dummies: ["りじりふじちょう", "りしりふじさんちょう"], trivia: "利尻島の玄関口の一つで、名山「利尻山」の別名が町名の由来。" },
+    { question: "利尻富士町", answer: "りしりふじちょう", difficulty: "EASY", dummies: ["りじりふじちょう", "りじりとしちょう"], trivia: "利尻島の玄関口の一つで、名山「利尻山」の別名が町名の由来。" },
 
     // NORMAL
     { question: "愛別町", answer: "あいべつちょう", difficulty: "NORMAL", dummies: ["あいわけちょう", "まなべつちょう"], trivia: "きのこの生産が盛んで、「きのこの里」として知られている。" },
@@ -94,7 +94,7 @@ const allQuizData = [
     { question: "網走市", answer: "あばしりし", difficulty: "NORMAL", dummies: ["もうそうし", "あみはしりし"], trivia: "「網走監獄」は、かつて実在した刑務所を保存公開する博物館。" },
     { question: "今金町", answer: "いまかねちょう", difficulty: "NORMAL", dummies: ["こんきんちょう", "いまがねちょう"], trivia: "「いまかね男爵」というブランドのジャガイモが有名。" },
     { question: "歌志内市", answer: "うたしないし", difficulty: "NORMAL", dummies: ["かしないし", "うたしうちし"], trivia: "かつては炭鉱で栄えたが、現在は日本で最も人口の少ない市。" },
-    { question: "浦臼町", answer: "うらうすちょう", difficulty: "NORMAL", dummies: ["ほきゅうちょう", "うらusuちょう"], trivia: "ワイン用ブドウの生産が盛んで、ワイナリーが集まる「鶴沼ワイナリー」がある。" },
+    { question: "浦臼町", answer: "うらうすちょう", difficulty: "NORMAL", dummies: ["ほきゅうちょう", "うらしろちょう"], trivia: "ワイン用ブドウの生産が盛んで、ワイナリーが集まる「鶴沼ワイナリー」がある。" },
     { question: "浦幌町", answer: "うらほろちょう", difficulty: "NORMAL", dummies: ["うらこうちょう", "ほこうちょう"], trivia: "アイヌ語で「川筋に大きな葉を持つもの」を意味する言葉が地名の由来。" },
     { question: "江差町", answer: "えさしちょう", difficulty: "NORMAL", dummies: ["こうさちょう", "えさしまち"], trivia: "江戸時代にはニシン漁で栄え、「江差追分」という民謡で知られる。" },
     { question: "遠軽町", answer: "えんがるちょう", difficulty: "NORMAL", dummies: ["えんけいちょう", "とおがるちょう"], trivia: "日本最大級のコスモス園「太陽の丘えんがる公園」がある。" },
