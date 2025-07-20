@@ -528,8 +528,16 @@ io.on('connection', (socket) => {
                 username: doc.data().username,
                 rating: doc.data().rating
             }));
+            
+            const correctSnapshot = await db.collection('users')
+                                             .orderBy('totalCorrect', 'desc')
+                                             .limit(100).get();
+            const correctRanking = correctSnapshot.docs.map(doc => ({
+                username: doc.data().username,
+                totalCorrect: doc.data().totalCorrect
+            }));
 
-            socket.emit('rankings-data', { levelRanking, ratingRanking });
+            socket.emit('rankings-data', { levelRanking, ratingRanking, correctRanking });
 
         } catch (error) {
             console.error("ランキングデータの取得に失敗:", error);
@@ -677,16 +685,22 @@ async function endQuiz(roomId) {
 
                     const score = state.scores[user.id] || 0;
                     if (score > 0) {
-                        const xpGained = 10 + (score * 5);
+                        let xpGained = 10 + (score * 5);
+                        if (state.answerFormat === 'text-input') {
+                            xpGained *= 3;
+                        }
+
                         const newXp = (data.xp || 0) + xpGained;
                         let newLevel = data.level || 1;
                         const xpForNextLevel = Math.floor(100 * Math.pow(newLevel, 1.5));
                         
-                        if (newXp >= xpForNextLevel) {
-                            newLevel++;
-                        }
+                        if (newXp >= xpForNextLevel) newLevel++;
+                        
                         updateData.xp = newXp;
                         updateData.level = newLevel;
+
+                        const newTotalCorrect = (data.totalCorrect || 0) + score;
+                        updateData.totalCorrect = newTotalCorrect;
                     }
 
                     if (ratingChanges[user.uid] !== undefined) {

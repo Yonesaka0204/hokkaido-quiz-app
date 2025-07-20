@@ -41,6 +41,7 @@ const firebaseConfig = {
                       level: 1,
                       xp: 0,
                       rating: 1500,
+                      totalCorrect: 0,
                       createdAt: firebase.firestore.FieldValue.serverTimestamp()
                   });
               })

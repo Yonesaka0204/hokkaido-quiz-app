@@ -2,11 +2,14 @@ const socket = io();
 
 const levelList = document.getElementById('level-ranking-list');
 const ratingList = document.getElementById('rating-ranking-list');
+const correctList = document.getElementById('correct-ranking-list');
 const levelPagination = document.getElementById('level-pagination');
 const ratingPagination = document.getElementById('rating-pagination');
+const correctPagination = document.getElementById('correct-pagination');
 
 let fullLevelRanking = [];
 let fullRatingRanking = [];
+let fullCorrectRanking = [];
 const ITEMS_PER_PAGE = 10;
 
 // --- 特定のリストとページを描画する関数 ---
@@ -30,6 +33,8 @@ function renderList(listElement, data, page, type) {
             statHtml = `<span class="rank-stat">Lv. ${user.level}</span>`;
         } else if (type === 'rating') {
             statHtml = `<span class="rank-stat">R: ${user.rating}</span>`;
+        } else if (type === 'correct') {
+            statHtml = `<span class="rank-stat">${user.totalCorrect}問</span>`;
         }
 
         li.innerHTML = `
@@ -46,7 +51,7 @@ function renderPagination(paginationElement, totalItems, currentPage, onPageClic
     paginationElement.innerHTML = '';
     const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
 
-    if (totalPages <= 1) return; // 1ページしかない場合は表示しない
+    if (totalPages <= 1) return;
 
     for (let i = 1; i <= totalPages; i++) {
         const button = document.createElement('button');
@@ -61,33 +66,40 @@ function renderPagination(paginationElement, totalItems, currentPage, onPageClic
 }
 
 // --- サーバーからデータを受け取った際のメイン処理 ---
-socket.on('rankings-data', ({ levelRanking, ratingRanking }) => {
+socket.on('rankings-data', ({ levelRanking, ratingRanking, correctRanking }) => {
     fullLevelRanking = levelRanking;
     fullRatingRanking = ratingRanking;
+    fullCorrectRanking = correctRanking;
 
-    // レベルランキングのページクリック時の処理
     const handleLevelPageClick = (page) => {
         renderList(levelList, fullLevelRanking, page, 'level');
         renderPagination(levelPagination, fullLevelRanking.length, page, handleLevelPageClick);
     };
     
-    // レートランキングのページクリック時の処理
     const handleRatingPageClick = (page) => {
         renderList(ratingList, fullRatingRanking, page, 'rating');
         renderPagination(ratingPagination, fullRatingRanking.length, page, handleRatingPageClick);
     };
 
-    handleLevelPageClick(1); // 初回描画
-    handleRatingPageClick(1); // 初回描画
+    const handleCorrectPageClick = (page) => {
+        renderList(correctList, fullCorrectRanking, page, 'correct');
+        renderPagination(correctPagination, fullCorrectRanking.length, page, handleCorrectPageClick);
+    };
+
+    handleLevelPageClick(1);
+    handleRatingPageClick(1);
+    handleCorrectPageClick(1);
 });
 
 socket.on('connect', () => {
     levelList.innerHTML = '<li>読み込み中...</li>';
     ratingList.innerHTML = '<li>読み込み中...</li>';
+    correctList.innerHTML = '<li>読み込み中...</li>';
     socket.emit('get-rankings');
 });
 
 socket.on('rankings-error', (data) => {
     levelList.innerHTML = `<li>${data.message}</li>`;
     ratingList.innerHTML = `<li>${data.message}</li>`;
+    correctList.innerHTML = `<li>${data.message}</li>`;
 });

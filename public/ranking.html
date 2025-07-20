@@ -11,7 +11,7 @@
             justify-content: space-around;
             gap: 2rem;
             width: 100%;
-            max-width: 800px;
+            max-width: 1200px;
             margin-top: 2rem;
             flex-wrap: wrap;
         }
@@ -20,7 +20,7 @@
             padding: 1.5rem;
             border-radius: 12px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-            width: 45%;
+            width: 30%;
             min-width: 300px;
         }
         .ranking-box h2 {
@@ -52,7 +52,7 @@
     </style>
 </head>
 <body>
-    <div class="container" style="max-width: 900px;">
+    <div class="container" style="max-width: 1300px;">
         <h1>ランキング</h1>
         <p>全プレイヤーの上位100名を表示しています。</p>
         <div class="ranking-container">
@@ -65,6 +65,11 @@
                 <h2>レートランキング</h2>
                 <ol id="rating-ranking-list" class="ranking-list"></ol>
                 <div id="rating-pagination" class="pagination-controls"></div>
+            </div>
+            <div class="ranking-box">
+                <h2>総正解数ランキング</h2>
+                <ol id="correct-ranking-list" class="ranking-list"></ol>
+                <div id="correct-pagination" class="pagination-controls"></div>
             </div>
         </div>
         <a href="/" class="secondary-btn" style="margin-top: 2rem;">トップページに戻る</a>
