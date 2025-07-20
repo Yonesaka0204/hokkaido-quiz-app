@@ -18,6 +18,15 @@
         <div id="options-container"></div>
         <div id="result"></div>
     </div>
+
+    <div id="chat-container" style="max-width: 550px; margin-top: 1rem;">
+        <div id="chat-messages"></div>
+        <form id="chat-form">
+            <input id="chat-input" autocomplete="off" placeholder="メッセージを入力..." />
+            <button type="submit">送信</button>
+        </form>
+    </div>
+
     <button id="back-to-lobby-btn" class="secondary-btn">ロビーに戻る</button>
 
     <script src="/socket.io/socket.io.js"></script>
@@ -50,7 +59,6 @@
         const playerStatusContainer = document.getElementById('player-status-container');
         const playerStatusList = document.getElementById('player-status-list');
 
-        // --- 接続時の処理 ---
         socket.on('connect', () => {
             auth.onAuthStateChanged((user) => {
                 const guestName = sessionStorage.getItem('guestName');
@@ -74,7 +82,6 @@
             });
         }
 
-        // --- 新しい問題の受付 ---
         socket.on('new-question', (data) => {
             hasProceeded = false;
             resultEl.innerHTML = '';
@@ -85,7 +92,6 @@
             progressEl.textContent = `第 ${data.questionNumber} / ${data.totalQuestions} 問`;
             questionEl.textContent = data.question.question;
 
-            // 参加者ステータス欄を更新
             playerStatusContainer.style.display = 'block';
             playerStatusList.innerHTML = '';
             data.users.forEach(user => {
@@ -229,6 +235,29 @@
         socket.on('join-error', (data) => {
             alert(data.message);
             window.location.href = '/';
+        });
+
+        const chatForm = document.getElementById('chat-form');
+        const chatInput = document.getElementById('chat-input');
+        const chatMessages = document.getElementById('chat-messages');
+
+        if (chatForm) {
+            chatForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const message = chatInput.value;
+                if (message) {
+                    socket.emit('send-chat-message', { roomId, message });
+                    chatInput.value = '';
+                }
+            });
+        }
+
+        socket.on('new-chat-message', ({ sender, message }) => {
+            const p = document.createElement('p');
+            const escapedMessage = message.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            p.innerHTML = `<strong>${sender}:</strong> ${escapedMessage}`;
+            chatMessages.appendChild(p);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
         });
     </script>
 </body>

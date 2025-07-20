@@ -540,6 +540,18 @@ io.on('connection', (socket) => {
         }
     });
 
+    socket.on('send-chat-message', ({ roomId, message }) => {
+        const room = rooms[roomId];
+        const user = room?.users.find(u => u.id === socket.id);
+
+        if (user && message.trim() !== '') {
+            io.to(roomId).emit('new-chat-message', {
+                sender: user.name,
+                message: message
+            });
+        }
+    });
+
     socket.on('return-to-lobby', ({ roomId }) => {
         const room = rooms[roomId];
         if (room && room.quizState.isActive) {

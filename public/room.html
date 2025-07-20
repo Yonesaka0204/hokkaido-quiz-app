@@ -42,6 +42,14 @@
         <button id="start-free-button" class="auth-button" style="background-color: #27ae60;">フリーマッチで開始</button>
     </div>
     
+    <div id="chat-container">
+        <div id="chat-messages"></div>
+        <form id="chat-form">
+            <input id="chat-input" autocomplete="off" placeholder="メッセージを入力..." />
+            <button type="submit">送信</button>
+        </form>
+    </div>
+
     <a href="/" class="secondary-btn" style="margin-top: 1rem;">トップページに戻る</a>
   </div>
 
@@ -139,6 +147,29 @@
     socket.on('join-error', (data) => {
         alert(data.message);
         window.location.href = '/';
+    });
+
+    const chatForm = document.getElementById('chat-form');
+    const chatInput = document.getElementById('chat-input');
+    const chatMessages = document.getElementById('chat-messages');
+
+    if (chatForm) {
+        chatForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const message = chatInput.value;
+            if (message) {
+                socket.emit('send-chat-message', { roomId, message });
+                chatInput.value = '';
+            }
+        });
+    }
+
+    socket.on('new-chat-message', ({ sender, message }) => {
+        const p = document.createElement('p');
+        const escapedMessage = message.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        p.innerHTML = `<strong>${sender}:</strong> ${escapedMessage}`;
+        chatMessages.appendChild(p);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
     });
   </script>
 </body>
