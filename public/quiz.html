@@ -52,8 +52,8 @@
         const auth = firebase.auth();
         const socket = io();
 
-        let nextQuestionTimer = null;
         let hasProceeded = false;
+        let isEliminated = false;
 
         const progressEl = document.getElementById('progress');
         const questionEl = document.getElementById('question');
@@ -89,8 +89,11 @@
         socket.on('new-question', (data) => {
             hasProceeded = false;
             resultEl.innerHTML = '';
-            optionsContainer.innerHTML = '';
-            questionEl.style.display = 'block';
+            
+            if (!isEliminated) {
+                optionsContainer.innerHTML = '';
+                questionEl.style.display = 'block';
+            }
             if(backToLobbyBtn) backToLobbyBtn.disabled = false;
             
             progressEl.textContent = `第 ${data.questionNumber} / ${data.totalQuestions} 問`;
@@ -101,11 +104,12 @@
             data.users.forEach(user => {
                 const li = document.createElement('li');
                 li.id = 'status-' + user.name;
-                li.innerHTML = `<span class="player-name">${user.name}</span><span class="player-answer-status">回答待...</span>`;
+                let statusText = user.eliminated ? '脱落' : '回答待...';
+                li.innerHTML = `<span class="player-name">${user.name}</span><span class="player-answer-status">${statusText}</span>`;
                 playerStatusList.appendChild(li);
             });
 
-            if (data.answerFormat === 'multiple-choice') {
+            if (!isEliminated && data.answerFormat === 'multiple-choice') {
                 data.options.forEach(optionText => {
                     const button = document.createElement('button');
                     button.textContent = optionText;
@@ -113,7 +117,7 @@
                     button.addEventListener('click', () => handleSubmit(optionText, data.question.question));
                     optionsContainer.appendChild(button);
                 });
-            } else {
+            } else if (!isEliminated) {
                 const input = document.createElement('input');
                 input.type = 'text';
                 input.id = 'answer-input';
@@ -134,16 +138,19 @@
         });
 
         function handleSubmit(answer, questionText) {
-            if (!answer || !answer.trim()) return;
+            if (!answer || !answer.trim() || isEliminated) return;
             socket.emit('submit-answer', { roomId, answer, questionText });
             Array.from(optionsContainer.children).forEach(child => child.disabled = true);
         }
         
-        socket.on('player-answered', ({ name, isCorrect }) => {
+        socket.on('player-answered', ({ name, isCorrect, eliminated }) => {
             const playerLi = document.getElementById('status-' + name);
             if (playerLi) {
                 const statusSpan = playerLi.querySelector('.player-answer-status');
-                if (isCorrect) {
+                if (eliminated) {
+                    statusSpan.textContent = '脱落';
+                    statusSpan.classList.add('incorrect');
+                } else if (isCorrect) {
                     statusSpan.textContent = '正解';
                     statusSpan.classList.add('correct');
                 } else {
@@ -153,9 +160,15 @@
             }
         });
 
-        socket.on('answer-result', ({ correct, correctAnswer, trivia }) => {
+        socket.on('answer-result', ({ correct, correctAnswer, trivia, eliminated }) => {
+            if (isEliminated) return;
+            
+            if (eliminated) {
+                isEliminated = true;
+                optionsContainer.innerHTML = '';
+            }
+
             questionEl.style.display = 'none';
-            optionsContainer.innerHTML = '';
             resultEl.innerHTML = '';
 
             const resultContainer = document.createElement('div');
@@ -169,7 +182,7 @@
                 verdictEl.textContent = '正解！';
                 verdictEl.classList.add('correct');
             } else {
-                verdictEl.textContent = '残念！';
+                verdictEl.textContent = eliminated ? 'ここで脱落！' : '残念！';
                 verdictEl.classList.add('incorrect');
                 const correctAnswerEl = document.createElement('p');
                 correctAnswerEl.className = 'result-correct-answer';
@@ -185,7 +198,7 @@
             const promptEl = document.createElement('p');
             promptEl.id = 'result-prompt';
             promptEl.className = 'result-prompt';
-            promptEl.textContent = '他のプレイヤーの回答を待っています...';
+            promptEl.textContent = isEliminated ? '他のプレイヤーの挑戦を見届けましょう！' : '他のプレイヤーの回答を待っています...';
             resultContainer.appendChild(promptEl);
             
             resultEl.appendChild(resultContainer);
@@ -194,21 +207,32 @@
         socket.on('all-answers-in', () => {
             const promptEl = document.getElementById('result-prompt');
             if (promptEl) {
-                promptEl.textContent = 'クリック、または Enterキーで次に進みます (7秒後に自動進行)';
-                promptEl.style.color = '#3498db';
+                if (!isEliminated) {
+                     promptEl.textContent = 'クリック、または Enterキーで次に進みます (7秒後に自動進行)';
+                     promptEl.style.color = '#3498db';
+                }
             }
-            startProceedTimer();
+            if (!isEliminated) {
+                document.addEventListener('click', proceedToNext);
+                document.addEventListener('keydown', handleKeydown);
+            }
         });
 
         function proceedToNext() {
-            if (hasProceeded) return;
+            if (hasProceeded || isEliminated) return;
             hasProceeded = true;
 
-            clearTimeout(nextQuestionTimer);
             document.removeEventListener('click', proceedToNext);
             document.removeEventListener('keydown', handleKeydown);
 
-            resultEl.textContent = '次の問題を待っています...';
+            const promptEl = document.getElementById('result-prompt');
+            if (promptEl) {
+                promptEl.textContent = '準備完了！他のプレイヤーを待っています...';
+                promptEl.style.color = '#2ecc71';
+            } else {
+                resultEl.textContent = '準備完了！他のプレイヤーを待っています...';
+            }
+            
             socket.emit('ready-for-next-question', { roomId });
         }
 
@@ -216,12 +240,6 @@
             if (e.key === 'Enter') {
                 proceedToNext();
             }
-        }
-
-        function startProceedTimer() {
-            nextQuestionTimer = setTimeout(proceedToNext, 7000);
-            document.addEventListener('click', proceedToNext);
-            document.addEventListener('keydown', handleKeydown);
         }
 
         socket.on('lobby-redirect', (targetRoomId) => {

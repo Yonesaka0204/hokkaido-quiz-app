@@ -85,7 +85,7 @@ const allQuizData = [
     { question: "夕張市", answer: "ゆうばりし", difficulty: "EASY", dummies: ["せきちょうし", "ゆばりし"], trivia: "「夕張メロン」の産地として全国的に有名。かつては炭鉱で栄えた。" },
     { question: "陸別町", answer: "りくべつちょう", difficulty: "EASY", dummies: ["ろくべつちょう", "りくわけちょう"], trivia: "冬には-30℃を下回ることもあり、「日本で一番寒い町」として知られる。" },
     { question: "利尻町", answer: "りしりちょう", difficulty: "EASY", dummies: ["りじりちょう", "りしりまち"], trivia: "利尻昆布の産地として有名で、島の中心には利尻山がそびえる。" },
-    { question: "利尻富士町", answer: "りしりふじちょう", difficulty: "EASY", dummies: ["りじりふじちょう", "りじりとしちょう"], trivia: "利尻島の玄関口の一つで、名山「利尻山」の別名が町名の由来。" },
+    { question: "利尻富士町", answer: "りしりふじちょう", difficulty: "EASY", dummies: ["りじりとしちょう", "りしりふじさんちょう"], trivia: "利尻島の玄関口の一つで、名山「利尻山」の別名が町名の由来。" },
 
     // NORMAL
     { question: "愛別町", answer: "あいべつちょう", difficulty: "NORMAL", dummies: ["あいわけちょう", "まなべつちょう"], trivia: "きのこの生産が盛んで、「きのこの里」として知られている。" },
@@ -93,7 +93,7 @@ const allQuizData = [
     { question: "厚真町", answer: "あつまちょう", difficulty: "NORMAL", dummies: ["こうしんちょう", "あつままち"], trivia: "サーフィンの人気スポット「浜厚真ビーチ」がある。" },
     { question: "網走市", answer: "あばしりし", difficulty: "NORMAL", dummies: ["もうそうし", "あみはしりし"], trivia: "「網走監獄」は、かつて実在した刑務所を保存公開する博物館。" },
     { question: "今金町", answer: "いまかねちょう", difficulty: "NORMAL", dummies: ["こんきんちょう", "いまがねちょう"], trivia: "「いまかね男爵」というブランドのジャガイモが有名。" },
-    { question: "歌志内市", answer: "うたしないし", difficulty: "NORMAL", dummies: ["かしないし", "うたしうちし"], trivia: "かつては炭鉱で栄えたが、現在は日本で最も人口の少ない市。" },
+    { question: "歌志内市", answer: "うたしないし", difficulty: "NORMAL", dummies: ["かしうちし", "うたしうちし"], trivia: "かつては炭鉱で栄えたが、現在は日本で最も人口の少ない市。" },
     { question: "浦臼町", answer: "うらうすちょう", difficulty: "NORMAL", dummies: ["ほきゅうちょう", "うらしろちょう"], trivia: "ワイン用ブドウの生産が盛んで、ワイナリーが集まる「鶴沼ワイナリー」がある。" },
     { question: "浦幌町", answer: "うらほろちょう", difficulty: "NORMAL", dummies: ["うらこうちょう", "ほこうちょう"], trivia: "アイヌ語で「川筋に大きな葉を持つもの」を意味する言葉が地名の由来。" },
     { question: "江差町", answer: "えさしちょう", difficulty: "NORMAL", dummies: ["こうさちょう", "えさしまち"], trivia: "江戸時代にはニシン漁で栄え、「江差追分」という民謡で知られる。" },
@@ -108,7 +108,7 @@ const allQuizData = [
     { question: "釧路町", answer: "くしろちょう", difficulty: "NORMAL", dummies: ["せんろちょう", "くしろまち"], trivia: "昆布の生産が盛んで、特に「長昆布」が有名。" },
     { question: "剣淵町", answer: "けんぶちちょう", difficulty: "NORMAL", dummies: ["つるぎぶちちょう", "けんふちちょう"], trivia: "絵本をテーマにした町づくりを進めており、「絵本の里」として知られる。" },
     { question: "更別村", answer: "さらべつむら", difficulty: "NORMAL", dummies: ["こうべつそん", "さらわけむら"], trivia: "十勝スピードウェイという国際規格のサーキットがある。" },
-    { question: "様似町", answer: "さまにちょう", difficulty: "NORMAL", dummies: ["ようにちょう", "さまじちょう"], trivia: "「アポイ岳」は、高山植物が豊富でユネスコ世界ジオパークに認定されている。" },
+    { question: "様似町", answer: "さまにちょう", difficulty: "NORMAL", dummies: ["さまにまち", "さまじちょう"], trivia: "「アポイ岳」は、高山植物が豊富でユネスコ世界ジオパークに認定されている。" },
     { question: "佐呂間町", answer: "さろまちょう", difficulty: "NORMAL", dummies: ["たすろまちょう", "さろちょう"], trivia: "日本で3番目に大きい湖「サロマ湖」があり、ホタテの養殖が盛ん。" },
     { question: "鹿追町", answer: "しかおいちょう", difficulty: "NORMAL", dummies: ["かのえちょう", "しかじゅんちょう"], trivia: "然別湖（しかりべつこ）では、冬に氷上の露天風呂「氷上露天風呂」が現れる。" },
     { question: "鹿部町", answer: "しかべちょう", difficulty: "NORMAL", dummies: ["ろくべちょう", "しかぶちょう"], trivia: "タラコの名産地として知られ、多くの水産加工場がある。" },
@@ -382,7 +382,7 @@ io.on('connection', (socket) => {
         state.playerCount = room.users.length;
         if (state.playerCount === 0) return;
         
-        if (isRanked) {
+        if (isRanked && difficulty !== 'ENDLESS') {
             const loggedInUsers = room.users.filter(u => !u.isGuest);
             if (loggedInUsers.length < 2) {
                 socket.emit('quiz-start-failed', { message: `レートマッチはログインユーザーが2人以上いる場合にのみ開始できます。` });
@@ -391,26 +391,35 @@ io.on('connection', (socket) => {
         }
         
         let filteredQuestions;
-        if (difficulty === 'RANDOM') {
+        if (difficulty === 'RANDOM' || difficulty === 'ENDLESS') {
             filteredQuestions = [...allQuizData];
         } else {
             filteredQuestions = allQuizData.filter(q => q.difficulty === difficulty);
         }
 
-        if (filteredQuestions.length < 10) {
+        if (difficulty !== 'ENDLESS' && filteredQuestions.length < 10) {
             socket.emit('quiz-start-failed', { message: `選択された難易度の問題が10問未満のため、クイズを開始できません。` });
             return;
         }
 
         state.isActive = true;
-        state.isRanked = isRanked;
+        state.isRanked = difficulty === 'ENDLESS' ? false : isRanked;
         state.difficulty = difficulty;
         state.answerFormat = answerFormat;
-        state.questions = [...filteredQuestions].sort(() => 0.5 - Math.random()).slice(0, 10);
+        state.questions = [...filteredQuestions].sort(() => 0.5 - Math.random());
+        if(difficulty !== 'ENDLESS') {
+            state.questions = state.questions.slice(0, 10);
+        }
         state.currentQuestionIndex = 0;
         state.answersReceived = 0;
         state.readyPlayers.clear();
         state.scores = {};
+        room.users.forEach(u => {
+            state.scores[u.id] = 0; // Initialize score for everyone
+            if(difficulty === 'ENDLESS') {
+                u.eliminated = false; // Reset elimination status for endless mode
+            }
+        });
         io.to(roomId).emit('quiz-start', { roomId });
     });
 
@@ -445,12 +454,8 @@ io.on('connection', (socket) => {
             const state = room.quizState;
             state.readyPlayers.add(socket.id);
 
-            if (state.readyPlayers.size >= state.playerCount) {
-                room.users.forEach(user => {
-                    if(state.scores[user.id] === undefined) {
-                        state.scores[user.id] = 0;
-                    }
-                });
+            const activePlayers = room.users.filter(u => !u.eliminated);
+            if (state.readyPlayers.size >= activePlayers.length) {
                 sendNextQuestion(roomId);
             }
         } catch (error) {
@@ -465,27 +470,39 @@ io.on('connection', (socket) => {
 
         const state = room.quizState;
         const question = state.questions[state.currentQuestionIndex];
+        const player = room.users.find(u => u.id === socket.id);
+        if (!player || player.eliminated) return;
+
         if (question && question.question === questionText) {
             const isCorrect = (question.answer === answer.trim());
+            
             if (isCorrect) {
-                if (state.scores[socket.id] === undefined) { state.scores[socket.id] = 0; }
                 state.scores[socket.id]++;
+            } else {
+                if (state.difficulty === 'ENDLESS') {
+                    player.eliminated = true;
+                }
             }
+            
             socket.emit('answer-result', { 
                 correct: isCorrect, 
                 correctAnswer: question.answer,
-                trivia: question.trivia 
+                trivia: question.trivia,
+                eliminated: player.eliminated
             });
 
-            const player = room.users.find(u => u.id === socket.id);
-            if (player) {
-                io.to(roomId).emit('player-answered', { name: player.name, isCorrect });
-            }
+            io.to(roomId).emit('player-answered', { name: player.name, isCorrect, eliminated: player.eliminated });
 
             state.answersReceived++;
-            if (state.answersReceived >= room.users.length) {
+            const activePlayers = room.users.filter(u => !u.eliminated);
+            if (state.answersReceived >= activePlayers.length) {
                 io.to(roomId).emit('all-answers-in');
                 state.answersReceived = 0;
+
+                if (state.nextQuestionTimer) clearTimeout(state.nextQuestionTimer);
+                state.nextQuestionTimer = setTimeout(() => {
+                    proceedToNextQuestion(roomId);
+                }, 7000);
             }
         }
     });
@@ -496,49 +513,28 @@ io.on('connection', (socket) => {
 
         const state = room.quizState;
         state.readyPlayers.add(socket.id);
-
-        if (state.readyPlayers.size >= room.users.length) {
-            state.readyPlayers.clear();
-            state.currentQuestionIndex++;
-            
-            if (state.currentQuestionIndex < state.questions.length) {
-                sendNextQuestion(roomId);
-            } else {
-                endQuiz(roomId);
-            }
+        
+        const activePlayers = room.users.filter(u => !u.eliminated);
+        if (state.readyPlayers.size >= activePlayers.length) {
+            proceedToNextQuestion(roomId);
         }
     });
 
     socket.on('get-rankings', async () => {
         try {
-            const levelSnapshot = await db.collection('users')
-                                            .orderBy('level', 'desc')
-                                            .orderBy('xp', 'desc')
-                                            .limit(100)
-                                            .get();
-            const levelRanking = levelSnapshot.docs.map(doc => ({
-                username: doc.data().username,
-                level: doc.data().level
-            }));
+            const levelSnapshot = await db.collection('users').orderBy('level', 'desc').orderBy('xp', 'desc').limit(100).get();
+            const levelRanking = levelSnapshot.docs.map(doc => ({ username: doc.data().username, level: doc.data().level }));
 
-            const ratingSnapshot = await db.collection('users')
-                                             .orderBy('rating', 'desc')
-                                             .limit(100)
-                                             .get();
-            const ratingRanking = ratingSnapshot.docs.map(doc => ({
-                username: doc.data().username,
-                rating: doc.data().rating
-            }));
+            const ratingSnapshot = await db.collection('users').orderBy('rating', 'desc').limit(100).get();
+            const ratingRanking = ratingSnapshot.docs.map(doc => ({ username: doc.data().username, rating: doc.data().rating }));
             
-            const correctSnapshot = await db.collection('users')
-                                             .orderBy('totalCorrect', 'desc')
-                                             .limit(100).get();
-            const correctRanking = correctSnapshot.docs.map(doc => ({
-                username: doc.data().username,
-                totalCorrect: doc.data().totalCorrect
-            }));
+            const correctSnapshot = await db.collection('users').orderBy('totalCorrect', 'desc').limit(100).get();
+            const correctRanking = correctSnapshot.docs.map(doc => ({ username: doc.data().username, totalCorrect: doc.data().totalCorrect }));
 
-            socket.emit('rankings-data', { levelRanking, ratingRanking, correctRanking });
+            const endlessSnapshot = await db.collection('users').orderBy('endlessHighScore', 'desc').limit(100).get();
+            const endlessRanking = endlessSnapshot.docs.map(doc => ({ username: doc.data().username, endlessHighScore: doc.data().endlessHighScore || 0 }));
+
+            socket.emit('rankings-data', { levelRanking, ratingRanking, correctRanking, endlessRanking });
 
         } catch (error) {
             console.error("ランキングデータの取得に失敗:", error);
@@ -592,17 +588,31 @@ function sendNextQuestion(roomId) {
     if (!room || !room.quizState.isActive) return;
 
     const state = room.quizState;
-    if (state.currentQuestionIndex >= state.questions.length) {
+    
+    const activePlayers = room.users.filter(u => !u.eliminated);
+    if (activePlayers.length === 0) {
         endQuiz(roomId);
         return;
     }
+
+    if (state.difficulty !== 'ENDLESS' && state.currentQuestionIndex >= state.questions.length) {
+        endQuiz(roomId);
+        return;
+    }
+    
+    // For endless mode, wrap around if needed
+    if (state.difficulty === 'ENDLESS' && state.currentQuestionIndex >= state.questions.length) {
+        state.questions = [...allQuizData].sort(() => 0.5 - Math.random());
+        state.currentQuestionIndex = 0;
+    }
+    
     const question = state.questions[state.currentQuestionIndex];
     const questionDataToSend = {
         question: { question: question.question },
-        questionNumber: state.currentQuestionIndex + 1,
-        totalQuestions: state.questions.length,
+        questionNumber: state.difficulty === 'ENDLESS' ? state.currentQuestionIndex + 1 : state.currentQuestionIndex + 1,
+        totalQuestions: state.difficulty === 'ENDLESS' ? '∞' : state.questions.length,
         answerFormat: state.answerFormat,
-        users: room.users
+        users: room.users // Always send full user list to show eliminated status
     };
 
     if (state.answerFormat === 'multiple-choice') {
@@ -627,6 +637,32 @@ function sendNextQuestion(roomId) {
         questionDataToSend.options = finalOptions;
     }
     io.to(roomId).emit('new-question', questionDataToSend);
+}
+
+function proceedToNextQuestion(roomId) {
+    const room = rooms[roomId];
+    if (!room || !room.quizState.isActive) return;
+
+    const state = room.quizState;
+
+    if (state.nextQuestionTimer) {
+        clearTimeout(state.nextQuestionTimer);
+        state.nextQuestionTimer = null;
+    } else {
+        if(state.readyPlayers.size < room.users.filter(u => !u.eliminated).length) return;
+    }
+
+    state.readyPlayers.clear();
+    state.currentQuestionIndex++;
+    
+    const activePlayers = room.users.filter(u => !u.eliminated);
+    const gameShouldEnd = state.difficulty === 'ENDLESS' ? activePlayers.length <= 1 : state.currentQuestionIndex >= state.questions.length;
+
+    if (!gameShouldEnd) {
+        sendNextQuestion(roomId);
+    } else {
+        endQuiz(roomId);
+    }
 }
 
 async function endQuiz(roomId) {
@@ -683,10 +719,13 @@ async function endQuiz(roomId) {
                     
                     const data = doc.data();
                     let updateData = {};
-
                     const score = state.scores[user.id] || 0;
                     
-                    if (score === 10) {
+                    if (state.difficulty === 'ENDLESS') {
+                        if (score > (data.endlessHighScore || 0)) {
+                            updateData.endlessHighScore = score;
+                        }
+                    } else if (score === 10) {
                         const difficulty = state.difficulty;
                         updateData[`achievements.perfectCounts.${difficulty}`] = admin.firestore.FieldValue.increment(1);
 
@@ -703,6 +742,9 @@ async function endQuiz(roomId) {
                         let xpGained = 10 + (score * 5);
                         if (state.answerFormat === 'text-input') {
                             xpGained *= 3;
+                        }
+                        if (state.difficulty === 'ENDLESS') {
+                            xpGained = Math.floor(xpGained * (score / 10)); // Adjust XP for endless
                         }
 
                         const newXp = (data.xp || 0) + xpGained;
@@ -748,7 +790,8 @@ function resetQuizState(roomId) {
             answersReceived: 0, 
             readyPlayers: new Set(),
             answerFormat: 'multiple-choice', 
-            playerCount: 0
+            playerCount: 0,
+            nextQuestionTimer: null
         };
     }
 }

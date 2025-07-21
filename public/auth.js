@@ -42,6 +42,7 @@ const firebaseConfig = {
                       xp: 0,
                       rating: 1500,
                       totalCorrect: 0,
+                      endlessHighScore: 0,
                       achievements: {
                           perfectRandomSelect: false,
                           perfectRandomInput: false,

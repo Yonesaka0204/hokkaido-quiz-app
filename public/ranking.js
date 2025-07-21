@@ -3,16 +3,18 @@ const socket = io();
 const levelList = document.getElementById('level-ranking-list');
 const ratingList = document.getElementById('rating-ranking-list');
 const correctList = document.getElementById('correct-ranking-list');
+const endlessList = document.getElementById('endless-ranking-list');
 const levelPagination = document.getElementById('level-pagination');
 const ratingPagination = document.getElementById('rating-pagination');
 const correctPagination = document.getElementById('correct-pagination');
+const endlessPagination = document.getElementById('endless-pagination');
 
 let fullLevelRanking = [];
 let fullRatingRanking = [];
 let fullCorrectRanking = [];
+let fullEndlessRanking = [];
 const ITEMS_PER_PAGE = 10;
 
-// --- 特定のリストとページを描画する関数 ---
 function renderList(listElement, data, page, type) {
     listElement.innerHTML = '';
     const start = (page - 1) * ITEMS_PER_PAGE;
@@ -35,6 +37,8 @@ function renderList(listElement, data, page, type) {
             statHtml = `<span class="rank-stat">R: ${user.rating}</span>`;
         } else if (type === 'correct') {
             statHtml = `<span class="rank-stat">${user.totalCorrect}問</span>`;
+        } else if (type === 'endless') {
+            statHtml = `<span class="rank-stat">${user.endlessHighScore}問</span>`;
         }
 
         li.innerHTML = `
@@ -46,7 +50,6 @@ function renderList(listElement, data, page, type) {
     });
 }
 
-// --- ページネーションのボタンを描画する関数 ---
 function renderPagination(paginationElement, totalItems, currentPage, onPageClick) {
     paginationElement.innerHTML = '';
     const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
@@ -65,11 +68,11 @@ function renderPagination(paginationElement, totalItems, currentPage, onPageClic
     }
 }
 
-// --- サーバーからデータを受け取った際のメイン処理 ---
-socket.on('rankings-data', ({ levelRanking, ratingRanking, correctRanking }) => {
+socket.on('rankings-data', ({ levelRanking, ratingRanking, correctRanking, endlessRanking }) => {
     fullLevelRanking = levelRanking;
     fullRatingRanking = ratingRanking;
     fullCorrectRanking = correctRanking;
+    fullEndlessRanking = endlessRanking;
 
     const handleLevelPageClick = (page) => {
         renderList(levelList, fullLevelRanking, page, 'level');
@@ -86,15 +89,22 @@ socket.on('rankings-data', ({ levelRanking, ratingRanking, correctRanking }) => 
         renderPagination(correctPagination, fullCorrectRanking.length, page, handleCorrectPageClick);
     };
 
+    const handleEndlessPageClick = (page) => {
+        renderList(endlessList, fullEndlessRanking, page, 'endless');
+        renderPagination(endlessPagination, fullEndlessRanking.length, page, handleEndlessPageClick);
+    };
+
     handleLevelPageClick(1);
     handleRatingPageClick(1);
     handleCorrectPageClick(1);
+    handleEndlessPageClick(1);
 });
 
 socket.on('connect', () => {
     levelList.innerHTML = '<li>読み込み中...</li>';
     ratingList.innerHTML = '<li>読み込み中...</li>';
     correctList.innerHTML = '<li>読み込み中...</li>';
+    endlessList.innerHTML = '<li>読み込み中...</li>';
     socket.emit('get-rankings');
 });
 
@@ -102,4 +112,5 @@ socket.on('rankings-error', (data) => {
     levelList.innerHTML = `<li>${data.message}</li>`;
     ratingList.innerHTML = `<li>${data.message}</li>`;
     correctList.innerHTML = `<li>${data.message}</li>`;
+    endlessList.innerHTML = `<li>${data.message}</li>`;
 });
