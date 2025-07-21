@@ -15,6 +15,7 @@ let fullCorrectRanking = [];
 let fullEndlessRanking = [];
 const ITEMS_PER_PAGE = 10;
 
+// --- 特定のリストとページを描画する関数 ---
 function renderList(listElement, data, page, type) {
     listElement.innerHTML = '';
     const start = (page - 1) * ITEMS_PER_PAGE;
@@ -40,16 +41,18 @@ function renderList(listElement, data, page, type) {
         } else if (type === 'endless') {
             statHtml = `<span class="rank-stat">${user.endlessHighScore}問</span>`;
         }
-
+        
+        // aタグでユーザープロフィールページへのリンクを作成
         li.innerHTML = `
             <span class="rank-number">${rank}.</span>
-            <span class="rank-name">${user.username}</span>
+            <a href="/user/${user.uid}" class="rank-name" style="color: #333; text-decoration: none;">${user.username}</a>
             ${statHtml}
         `;
         listElement.appendChild(li);
     });
 }
 
+// --- ページネーションのボタンを描画する関数 ---
 function renderPagination(paginationElement, totalItems, currentPage, onPageClick) {
     paginationElement.innerHTML = '';
     const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
@@ -68,6 +71,7 @@ function renderPagination(paginationElement, totalItems, currentPage, onPageClic
     }
 }
 
+// --- サーバーからデータを受け取った際のメイン処理 ---
 socket.on('rankings-data', ({ levelRanking, ratingRanking, correctRanking, endlessRanking }) => {
     fullLevelRanking = levelRanking;
     fullRatingRanking = ratingRanking;

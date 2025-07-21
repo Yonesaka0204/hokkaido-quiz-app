@@ -43,6 +43,7 @@ const firebaseConfig = {
                       rating: 1500,
                       totalCorrect: 0,
                       endlessHighScore: 0,
+                      bio: "",
                       achievements: {
                           perfectRandomSelect: false,
                           perfectRandomInput: false,

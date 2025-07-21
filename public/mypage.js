@@ -33,6 +33,10 @@ const countNormal = document.getElementById('count-normal');
 const countHard = document.getElementById('count-hard');
 const countSuper = document.getElementById('count-super');
 const countRandom = document.getElementById('count-random');
+const bioCard = document.getElementById('bio-card');
+const bioDisplay = document.getElementById('bio-display');
+const bioForm = document.getElementById('bio-form');
+const bioInput = document.getElementById('bio-input');
 
 // ログイン状態を監視
 auth.onAuthStateChanged(user => {
@@ -60,6 +64,12 @@ auth.onAuthStateChanged(user => {
                 xpProgress.style.width = `${progressPercentage}%`;
                 xpProgress.textContent = `${Math.floor(progressPercentage)}%`;
                 
+                // 自己紹介文の表示
+                const bio = data.bio || "自己紹介文がまだ設定されていません。";
+                bioDisplay.textContent = bio;
+                bioInput.value = data.bio || "";
+                bioCard.style.display = 'block';
+
                 // 実績表示の処理
                 if (data.achievements) {
                     const achData = data.achievements;
@@ -96,3 +106,24 @@ auth.onAuthStateChanged(user => {
         }, 2000);
     }
 });
+
+if (bioForm) {
+    bioForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const newBio = bioInput.value;
+        const user = auth.currentUser;
+
+        if (user) {
+            const userRef = db.collection('users').doc(user.uid);
+            userRef.update({
+                bio: newBio
+            }).then(() => {
+                alert('自己紹介を更新しました！');
+                bioDisplay.textContent = newBio;
+            }).catch(error => {
+                console.error("自己紹介の更新エラー:", error);
+                alert('自己紹介の更新に失敗しました。');
+            });
+        }
+    });
+}

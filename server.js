@@ -329,6 +329,7 @@ app.get('/signup', (req, res) => res.sendFile(path.join(__dirname, 'public/signu
 app.get('/mypage', (req, res) => res.sendFile(path.join(__dirname, 'public/mypage.html')));
 app.get('/ranking', (req, res) => res.sendFile(path.join(__dirname, 'public/ranking.html')));
 app.get('/health', (req, res) => res.sendStatus(200));
+app.get('/user/:uid', (req, res) => res.sendFile(path.join(__dirname, 'public/user.html')));
 app.get('/room/:roomId', (req, res) => res.sendFile(path.join(__dirname, 'public/room.html')));
 app.get('/room/:roomId/quiz', (req, res) => res.sendFile(path.join(__dirname, 'public/quiz.html')));
 app.get('/room/:roomId/results', (req, res) => res.sendFile(path.join(__dirname, 'public/results.html')));
@@ -415,9 +416,9 @@ io.on('connection', (socket) => {
         state.readyPlayers.clear();
         state.scores = {};
         room.users.forEach(u => {
-            state.scores[u.id] = 0; // Initialize score for everyone
+            state.scores[u.id] = 0;
             if(difficulty === 'ENDLESS') {
-                u.eliminated = false; // Reset elimination status for endless mode
+                u.eliminated = false;
             }
         });
         io.to(roomId).emit('quiz-start', { roomId });
@@ -523,16 +524,16 @@ io.on('connection', (socket) => {
     socket.on('get-rankings', async () => {
         try {
             const levelSnapshot = await db.collection('users').orderBy('level', 'desc').orderBy('xp', 'desc').limit(100).get();
-            const levelRanking = levelSnapshot.docs.map(doc => ({ username: doc.data().username, level: doc.data().level }));
+            const levelRanking = levelSnapshot.docs.map(doc => ({ uid: doc.id, username: doc.data().username, level: doc.data().level }));
 
             const ratingSnapshot = await db.collection('users').orderBy('rating', 'desc').limit(100).get();
-            const ratingRanking = ratingSnapshot.docs.map(doc => ({ username: doc.data().username, rating: doc.data().rating }));
+            const ratingRanking = ratingSnapshot.docs.map(doc => ({ uid: doc.id, username: doc.data().username, rating: doc.data().rating }));
             
             const correctSnapshot = await db.collection('users').orderBy('totalCorrect', 'desc').limit(100).get();
-            const correctRanking = correctSnapshot.docs.map(doc => ({ username: doc.data().username, totalCorrect: doc.data().totalCorrect }));
+            const correctRanking = correctSnapshot.docs.map(doc => ({ uid: doc.id, username: doc.data().username, totalCorrect: doc.data().totalCorrect }));
 
             const endlessSnapshot = await db.collection('users').orderBy('endlessHighScore', 'desc').limit(100).get();
-            const endlessRanking = endlessSnapshot.docs.map(doc => ({ username: doc.data().username, endlessHighScore: doc.data().endlessHighScore || 0 }));
+            const endlessRanking = endlessSnapshot.docs.map(doc => ({ uid: doc.id, username: doc.data().username, endlessHighScore: doc.data().endlessHighScore || 0 }));
 
             socket.emit('rankings-data', { levelRanking, ratingRanking, correctRanking, endlessRanking });
 
@@ -543,6 +544,30 @@ io.on('connection', (socket) => {
                 console.error("Firestoreの複合インデックスが必要です。以下のURLにアクセスしてインデックスを作成してください:\n", urlMatch[0]);
             }
             socket.emit('rankings-error', { message: 'ランキングデータの取得に失敗しました。' });
+        }
+    });
+
+    socket.on('get-user-profile', async ({ uid }) => {
+        try {
+            const userDoc = await db.collection('users').doc(uid).get();
+            if (!userDoc.exists) {
+                socket.emit('user-profile-error', { message: 'ユーザーが見つかりません。' });
+                return;
+            }
+            const data = userDoc.data();
+            const userProfile = {
+                username: data.username,
+                level: data.level || 1,
+                rating: data.rating || 1500,
+                totalCorrect: data.totalCorrect || 0,
+                endlessHighScore: data.endlessHighScore || 0,
+                bio: data.bio || "",
+                achievements: data.achievements || {}
+            };
+            socket.emit('user-profile-data', { userData: userProfile });
+        } catch (error) {
+            console.error("プロフィール取得エラー:", error);
+            socket.emit('user-profile-error', { message: 'プロフィールの取得に失敗しました。' });
         }
     });
 
@@ -600,7 +625,6 @@ function sendNextQuestion(roomId) {
         return;
     }
     
-    // For endless mode, wrap around if needed
     if (state.difficulty === 'ENDLESS' && state.currentQuestionIndex >= state.questions.length) {
         state.questions = [...allQuizData].sort(() => 0.5 - Math.random());
         state.currentQuestionIndex = 0;
@@ -609,10 +633,10 @@ function sendNextQuestion(roomId) {
     const question = state.questions[state.currentQuestionIndex];
     const questionDataToSend = {
         question: { question: question.question },
-        questionNumber: state.difficulty === 'ENDLESS' ? state.currentQuestionIndex + 1 : state.currentQuestionIndex + 1,
-        totalQuestions: state.difficulty === 'ENDLESS' ? '∞' : state.questions.length,
+        questionNumber: state.difficulty === 'ENDLESS' ? (state.scores[Object.keys(state.scores)[0]] || 0) + 1 : state.currentQuestionIndex + 1,
+        totalQuestions: state.difficulty === 'ENDLESS' ? '∞' : 10,
         answerFormat: state.answerFormat,
-        users: room.users // Always send full user list to show eliminated status
+        users: room.users
     };
 
     if (state.answerFormat === 'multiple-choice') {
@@ -656,7 +680,7 @@ function proceedToNextQuestion(roomId) {
     state.currentQuestionIndex++;
     
     const activePlayers = room.users.filter(u => !u.eliminated);
-    const gameShouldEnd = state.difficulty === 'ENDLESS' ? activePlayers.length <= 1 : state.currentQuestionIndex >= state.questions.length;
+    const gameShouldEnd = state.difficulty === 'ENDLESS' ? activePlayers.length < 1 : state.currentQuestionIndex >= state.questions.length;
 
     if (!gameShouldEnd) {
         sendNextQuestion(roomId);
@@ -744,7 +768,7 @@ async function endQuiz(roomId) {
                             xpGained *= 3;
                         }
                         if (state.difficulty === 'ENDLESS') {
-                            xpGained = Math.floor(xpGained * (score / 10)); // Adjust XP for endless
+                            xpGained = Math.floor(xpGained * (score / 10));
                         }
 
                         const newXp = (data.xp || 0) + xpGained;

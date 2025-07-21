@@ -3,17 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>マイページ</title>
+    <title>ユーザープロフィール</title>
     <link rel="stylesheet" href="/style.css">
 </head>
 <body>
     <div class="container">
-        <h1>マイページ</h1>
+        <h1 id="username-header">読み込み中...</h1>
         <div id="user-status" class="status-card" style="display: none;">
-            <div class="status-item">
-                <span>ユーザー名</span>
-                <span id="username-display">---</span>
-            </div>
             <div class="status-item">
                 <span>レベル</span>
                 <span id="level-display">--</span>
@@ -23,17 +19,12 @@
                 <span id="rating-display">----</span>
             </div>
             <div class="status-item">
-                <span>現在の経験値 (XP)</span>
-                <span id="xp-display">--</span>
+                <span>総正解数</span>
+                <span id="total-correct-display">--</span>
             </div>
-            <div>
-                <div class="status-item" style="margin-bottom: 0;">
-                    <span>次のレベルまで</span>
-                    <span id="xp-next-display">-- / --</span>
-                </div>
-                <div class="xp-progress-bar">
-                    <div id="xp-progress" class="xp-progress" style="width: 0%;">0%</div>
-                </div>
+            <div class="status-item">
+                <span>エンドレスモード ハイスコア</span>
+                <span id="endless-display">--</span>
             </div>
         </div>
         <p id="loading-message">ユーザー情報を読み込んでいます...</p>
@@ -41,10 +32,6 @@
         <div id="bio-card" class="status-card" style="display: none; margin-top: 2rem;">
             <h2 style="margin-top: 0; text-align: center;">自己紹介</h2>
             <p id="bio-display" style="white-space: pre-wrap; text-align: left;"></p>
-            <form id="bio-form" style="margin-top: 1rem;">
-                <textarea id="bio-input" rows="4" style="width: 100%; box-sizing: border-box; font-size: 1rem; padding: 0.5rem;" placeholder="自己紹介文を入力..."></textarea>
-                <button type="submit" style="margin-top: 1rem;">保存する</button>
-            </form>
         </div>
 
         <div id="achievements-card" class="status-card" style="display: none; margin-top: 2rem;">
@@ -80,13 +67,11 @@
                 <span id="count-random">0 回</span>
             </div>
         </div>
-
-        <a href="/" class="secondary-btn" style="margin-top: 2rem;">トップページに戻る</a>
+        
+        <a href="/ranking" class="secondary-btn" style="margin-top: 2rem;">ランキングに戻る</a>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <script src="/mypage.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/user.js"></script>
 </body>
 </html>
