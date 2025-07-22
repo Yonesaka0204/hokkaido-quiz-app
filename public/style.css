@@ -496,12 +496,9 @@ body.chat-is-open #chat-toggle-btn:hover {
         left: 10px;
         right: 10px;
         top: 10px;
-        transform: translateX(0) !important;
+        /* ★変更点★ transformの行を削除 */
     }
     .container {
         margin-top: 120px;
-    }
-    body.chat-is-open .container {
-        transform: translateX(0) !important;
     }
 }
