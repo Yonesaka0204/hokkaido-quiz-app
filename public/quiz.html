@@ -15,7 +15,7 @@
     <div class="container">
         <div class="main-header">
             <p id="progress" style="font-size: 1.2rem; font-weight: bold; margin: 0;"></p>
-            <button id="chat-toggle-btn"></button>
+            <button id="chat-header-btn"></button>
         </div>
         
         <h2 id="question">クイズの開始を待っています...</h2>
@@ -24,6 +24,7 @@
     </div>
     <button id="back-to-lobby-btn" class="secondary-btn">ロビーに戻る</button>
 
+    <button id="chat-side-tab"><span>チャット</span></button>
     <div id="chat-panel">
         <h3>チャット</h3>
         <div id="chat-messages"></div>
@@ -262,23 +263,35 @@
             window.location.href = '/';
         });
 
-        const chatToggleBtn = document.getElementById('chat-toggle-btn');
+        const chatHeaderBtn = document.getElementById('chat-header-btn');
+        const chatSideTab = document.getElementById('chat-side-tab');
         const chatPanel = document.getElementById('chat-panel');
-        const openChatIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="white"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>`;
-        const closeChatIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="white"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>`;
-
-        if (chatToggleBtn) {
-            chatToggleBtn.innerHTML = openChatIcon;
-            chatToggleBtn.addEventListener('click', () => {
-                const isOpen = chatPanel.classList.toggle('is-open');
-                document.body.classList.toggle('chat-is-open');
-                chatToggleBtn.innerHTML = isOpen ? closeChatIcon : openChatIcon;
-            });
-        }
-
         const chatForm = document.getElementById('chat-form');
         const chatInput = document.getElementById('chat-input');
         const chatMessages = document.getElementById('chat-messages');
+
+        const chatIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>`;
+        const closeIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>`;
+        
+        function toggleChat() {
+            const isOpen = chatPanel.classList.toggle('is-open');
+            document.body.classList.toggle('chat-is-open');
+            updateChatButtonContent(isOpen);
+        }
+
+        function updateChatButtonContent(isOpen) {
+            if (window.innerWidth <= 768) {
+                chatHeaderBtn.innerHTML = isOpen ? closeIcon : chatIcon;
+            } else {
+                chatSideTab.querySelector('span').textContent = isOpen ? '閉じる' : 'チャット';
+            }
+        }
+
+        chatHeaderBtn.addEventListener('click', toggleChat);
+        chatSideTab.addEventListener('click', toggleChat);
+        
+        updateChatButtonContent(chatPanel.classList.contains('is-open'));
+        window.addEventListener('resize', () => updateChatButtonContent(chatPanel.classList.contains('is-open')));
 
         if (chatForm) {
             chatForm.addEventListener('submit', (e) => {
