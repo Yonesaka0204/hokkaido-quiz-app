@@ -1,20 +1,5 @@
-// Firebaseプロジェクトの設定
-const firebaseConfig = {
-    apiKey: "AIzaSyDt92CKIkB48Bf6gXAlaeZYF7uNwT6gEp4",
-    authDomain: "quizhokkaido.firebaseapp.com",
-    projectId: "quizhokkaido",
-    storageBucket: "quizhokkaido.firebasestorage.app",
-    messagingSenderId: "570677049102",
-    appId: "1:570677049102:web:d66b9d3a1e525d2428c95f",
-    measurementId: "G-QZJDP1DB32"
-};
-
-// Firebaseを初期化
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-}
-const auth = firebase.auth();
-const db = firebase.firestore();
+// ★★★ firebaseConfigとinitializeAppの行を削除しました ★★★
+// (これらの処理は新しいfirebase-config.jsに集約されます)
 
 // DOM要素を取得
 const userStatusDiv = document.getElementById('user-status');
@@ -39,9 +24,11 @@ const bioForm = document.getElementById('bio-form');
 const bioInput = document.getElementById('bio-input');
 
 // ログイン状態を監視
+// 'auth'はfirebase-config.jsで定義されたグローバル変数を使用
 auth.onAuthStateChanged(user => {
     if (user) {
         // ログインしている場合、Firestoreからユーザー情報を取得
+        // 'db'はfirebase-config.jsで定義されたグローバル変数を使用
         const userRef = db.collection('users').doc(user.uid);
         userRef.get().then(doc => {
             if (doc.exists) {
