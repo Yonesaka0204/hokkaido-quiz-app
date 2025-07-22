@@ -416,7 +416,8 @@ io.on('connection', (socket) => {
         state.readyPlayers.clear();
         state.scores = {};
         room.users.forEach(u => {
-            state.scores[u.id] = 0;
+            const key = u.uid || u.name;
+            state.scores[key] = 0;
             if(difficulty === 'ENDLESS') {
                 u.eliminated = false;
             }
@@ -476,9 +477,10 @@ io.on('connection', (socket) => {
 
         if (question && question.question === questionText) {
             const isCorrect = (question.answer === answer.trim());
+            const key = player.uid || player.name;
             
             if (isCorrect) {
-                state.scores[socket.id]++;
+                state.scores[key]++;
             } else {
                 if (state.difficulty === 'ENDLESS') {
                     player.eliminated = true;
@@ -633,7 +635,7 @@ function sendNextQuestion(roomId) {
     const question = state.questions[state.currentQuestionIndex];
     const questionDataToSend = {
         question: { question: question.question },
-        questionNumber: state.difficulty === 'ENDLESS' ? (state.scores[Object.keys(state.scores)[0]] || 0) + 1 : state.currentQuestionIndex + 1,
+        questionNumber: state.difficulty === 'ENDLESS' ? (state.scores[activePlayers[0].uid || activePlayers[0].name] || 0) + 1 : state.currentQuestionIndex + 1,
         totalQuestions: state.difficulty === 'ENDLESS' ? '∞' : 10,
         answerFormat: state.answerFormat,
         users: room.users
@@ -695,13 +697,16 @@ async function endQuiz(roomId) {
     
     const state = room.quizState;
     const finalResults = room.users
-        .map(user => ({
-            uid: user.uid,
-            name: user.name,
-            score: state.scores[user.id] || 0,
-            isGuest: user.isGuest,
-            currentRating: user.rating
-        }))
+        .map(user => {
+            const key = user.uid || user.name;
+            return {
+                uid: user.uid,
+                name: user.name,
+                score: state.scores[key] || 0,
+                isGuest: user.isGuest,
+                currentRating: user.rating
+            };
+        })
         .sort((a, b) => b.score - a.score);
 
     const ratedPlayers = finalResults.filter(p => !p.isGuest);
@@ -743,7 +748,8 @@ async function endQuiz(roomId) {
                     
                     const data = doc.data();
                     let updateData = {};
-                    const score = state.scores[user.id] || 0;
+                    const key = user.uid;
+                    const score = state.scores[key] || 0;
                     
                     if (state.difficulty === 'ENDLESS') {
                         if (score > (data.endlessHighScore || 0)) {
