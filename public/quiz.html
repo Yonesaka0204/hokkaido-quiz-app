@@ -123,6 +123,9 @@
                 input.id = 'answer-input';
                 input.placeholder = 'ひらがなで入力';
                 input.autocomplete = 'off';
+                input.autocorrect = 'off';
+                input.autocapitalize = 'off';
+                input.spellcheck = false;
                 const submitButton = document.createElement('button');
                 submitButton.textContent = '解答する';
                 submitButton.className = 'option-btn';
