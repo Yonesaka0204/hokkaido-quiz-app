@@ -407,7 +407,7 @@ button:disabled {
     color: #e74c3c;
 }
 
-/* --- New Slide-out Chat with Content Push --- */
+/* --- New Slide-out Chat Styles --- */
 .container, #player-status-container {
     transition: transform 0.3s ease-in-out;
 }
@@ -417,38 +417,32 @@ body.chat-is-open #player-status-container {
     transform: translateX(-320px);
 }
 
-.main-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    margin-bottom: 1rem;
-}
-
 #chat-toggle-btn {
-    width: 50px;
-    height: 50px;
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 60px;
+    height: 60px;
     border-radius: 50%;
     background-color: #3498db;
     color: white;
     border: none;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
     cursor: pointer;
+    z-index: 1001;
     display: flex;
     justify-content: center;
     align-items: center;
     padding: 0;
-    margin: 0 0 0 1rem;
-    flex-shrink: 0;
-    transition: background-color 0.2s;
-    position: relative;
-    z-index: 1000;
+    margin: 0;
+    transition: transform 0.3s ease-in-out, background-color 0.2s;
 }
 #chat-toggle-btn:hover {
     background-color: #2980b9;
 }
 
 body.chat-is-open #chat-toggle-btn {
+    transform: translateX(-320px);
     background-color: #e74c3c;
 }
 body.chat-is-open #chat-toggle-btn:hover {
@@ -463,7 +457,7 @@ body.chat-is-open #chat-toggle-btn:hover {
     height: 100%;
     background-color: #fff;
     box-shadow: -5px 0 15px rgba(0,0,0,0.15);
-    z-index: 999;
+    z-index: 1000;
     transform: translateX(100%);
     transition: transform 0.3s ease-in-out;
     display: flex;
@@ -507,5 +501,8 @@ body.chat-is-open #chat-toggle-btn:hover {
     }
     body.chat-is-open .container {
         transform: translateX(0) !important;
+    }
+    body.chat-is-open #chat-toggle-btn {
+        transform: translateX(-320px);
     }
 }
