@@ -484,6 +484,8 @@ body.chat-is-open #chat-toggle-btn:hover {
     height: auto;
     border: none;
     background-color: #f9f9f9;
+    overflow-y: auto; /* ★変更点★ */
+    padding: 0.5rem;   /* ★変更点★ */
 }
 #chat-panel #chat-form {
     margin-top: 1rem;
@@ -496,7 +498,6 @@ body.chat-is-open #chat-toggle-btn:hover {
         left: 10px;
         right: 10px;
         top: 10px;
-        /* ★変更点★ transformの行を削除 */
     }
     .container {
         margin-top: 120px;
