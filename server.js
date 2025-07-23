@@ -773,6 +773,13 @@ async function endQuiz(roomId) {
                         if (state.answerFormat === 'text-input') {
                             xpGained *= 3;
                         }
+
+                        // ★変更点★ 全問正解ボーナスの処理
+                        if (state.difficulty !== 'ENDLESS' && score === 10) {
+                            xpGained += 100;
+                            console.log(`[XP Bonus] User ${user.uid} achieved a perfect score! +100 XP`);
+                        }
+
                         if (state.difficulty === 'ENDLESS') {
                             xpGained = Math.floor(xpGained * (score / 10));
                         }
