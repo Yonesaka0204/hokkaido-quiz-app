@@ -73,10 +73,19 @@ socket.on('new-question', (data) => {
         input.type = 'text';
         input.id = 'answer-input';
         input.placeholder = 'ひらがなで入力';
-        input.autocomplete = 'new-password'; // ★変更★ 予測変換を強力に抑制
+        input.autocomplete = 'new-password';
         input.autocorrect = 'off';
         input.autocapitalize = 'off';
         input.spellcheck = false;
+        
+        // ★追加★ Chromeの自動入力を回避する設定
+        input.readOnly = true;
+        input.onfocus = () => { 
+            input.readOnly = false;
+            // 一度だけ実行されれば良いので、自分自身を削除する
+            input.onfocus = null; 
+        };
+
         const submitButton = document.createElement('button');
         submitButton.textContent = '解答する';
         submitButton.className = 'option-btn';
