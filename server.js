@@ -757,7 +757,10 @@ async function endQuiz(roomId) {
                         }
                     } else if (score === 10) {
                         const difficulty = state.difficulty;
-                        updateData[`achievements.perfectCounts.${difficulty}`] = admin.firestore.FieldValue.increment(1);
+                        const formatKey = state.answerFormat === 'multiple-choice' ? 'select' : 'input';
+                        
+                        // ★変更点★ 解答形式を判別して保存先を動的に変更
+                        updateData[`achievements.perfectCounts.${difficulty}.${formatKey}`] = admin.firestore.FieldValue.increment(1);
 
                         if (difficulty === 'RANDOM') {
                             if (state.answerFormat === 'multiple-choice') {
@@ -774,7 +777,6 @@ async function endQuiz(roomId) {
                             xpGained *= 3;
                         }
 
-                        // ★変更点★ 全問正解ボーナスの処理
                         if (state.difficulty !== 'ENDLESS' && score === 10) {
                             xpGained += 100;
                             console.log(`[XP Bonus] User ${user.uid} achieved a perfect score! +100 XP`);

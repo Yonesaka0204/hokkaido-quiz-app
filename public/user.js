@@ -45,16 +45,35 @@ socket.on('user-profile-data', ({ userData }) => {
 
     if (userData.achievements) {
         const achData = userData.achievements;
-        const counts = achData.perfectCounts || {};
-        
         achRandomSelect.textContent = achData.perfectRandomSelect ? '🏆 達成済み' : '未達成';
         achRandomInput.textContent = achData.perfectRandomInput ? '🏆 達成済み' : '未達成';
 
-        countEasy.textContent = (counts.EASY || 0) + ' 回';
-        countNormal.textContent = (counts.NORMAL || 0) + ' 回';
-        countHard.textContent = (counts.HARD || 0) + ' 回';
-        countSuper.textContent = (counts.SUPER || 0) + ' 回';
-        countRandom.textContent = (counts.RANDOM || 0) + ' 回';
+        // ★★★ ここから変更 ★★★
+        const counts = achData.perfectCounts || {};
+
+        // 達成回数を整形して表示するヘルパー関数
+        const formatCountText = (difficultyKey) => {
+            const countData = counts[difficultyKey];
+            // 新しいデータ形式 (オブジェクト) の場合
+            if (typeof countData === 'object' && countData !== null) {
+                const selectCount = countData.select || 0;
+                const inputCount = countData.input || 0;
+                return `選択 ${selectCount}回 / 入力 ${inputCount}回`;
+            }
+            // 古いデータ形式 (数値) の場合
+            if (typeof countData === 'number') {
+                return `合計 ${countData}回`; // 古いデータは合計として表示
+            }
+            // データがない場合
+            return `選択 0回 / 入力 0回`;
+        };
+
+        countEasy.textContent = formatCountText('EASY');
+        countNormal.textContent = formatCountText('NORMAL');
+        countHard.textContent = formatCountText('HARD');
+        countSuper.textContent = formatCountText('SUPER');
+        countRandom.textContent = formatCountText('RANDOM');
+        // ★★★ ここまで変更 ★★★
 
         achievementsCard.style.display = 'block';
     }

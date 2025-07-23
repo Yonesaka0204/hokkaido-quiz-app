@@ -1,5 +1,20 @@
-// ★★★ firebaseConfigとinitializeAppの行を削除しました ★★★
-// (これらの処理は新しいfirebase-config.jsに集約されます)
+// Firebaseプロジェクトの設定
+const firebaseConfig = {
+    apiKey: "AIzaSyDt92CKIkB48Bf6gXAlaeZYF7uNwT6gEp4",
+    authDomain: "quizhokkaido.firebaseapp.com",
+    projectId: "quizhokkaido",
+    storageBucket: "quizhokkaido.firebasestorage.app",
+    messagingSenderId: "570677049102",
+    appId: "1:570677049102:web:d66b9d3a1e525d2428c95f",
+    measurementId: "G-QZJDP1DB32"
+};
+
+// Firebaseを初期化
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+const auth = firebase.auth();
+const db = firebase.firestore();
 
 // DOM要素を取得
 const userStatusDiv = document.getElementById('user-status');
@@ -24,11 +39,9 @@ const bioForm = document.getElementById('bio-form');
 const bioInput = document.getElementById('bio-input');
 
 // ログイン状態を監視
-// 'auth'はfirebase-config.jsで定義されたグローバル変数を使用
 auth.onAuthStateChanged(user => {
     if (user) {
         // ログインしている場合、Firestoreからユーザー情報を取得
-        // 'db'はfirebase-config.jsで定義されたグローバル変数を使用
         const userRef = db.collection('users').doc(user.uid);
         userRef.get().then(doc => {
             if (doc.exists) {
@@ -60,16 +73,35 @@ auth.onAuthStateChanged(user => {
                 // 実績表示の処理
                 if (data.achievements) {
                     const achData = data.achievements;
-                    const counts = achData.perfectCounts || {};
-                    
                     achRandomSelect.textContent = achData.perfectRandomSelect ? '🏆 達成済み' : '未達成';
                     achRandomInput.textContent = achData.perfectRandomInput ? '🏆 達成済み' : '未達成';
 
-                    countEasy.textContent = (counts.EASY || 0) + ' 回';
-                    countNormal.textContent = (counts.NORMAL || 0) + ' 回';
-                    countHard.textContent = (counts.HARD || 0) + ' 回';
-                    countSuper.textContent = (counts.SUPER || 0) + ' 回';
-                    countRandom.textContent = (counts.RANDOM || 0) + ' 回';
+                    // ★★★ ここから変更 ★★★
+                    const counts = achData.perfectCounts || {};
+                    
+                    // 達成回数を整形して表示するヘルパー関数
+                    const formatCountText = (difficultyKey) => {
+                        const countData = counts[difficultyKey];
+                        // 新しいデータ形式 (オブジェクト) の場合
+                        if (typeof countData === 'object' && countData !== null) {
+                            const selectCount = countData.select || 0;
+                            const inputCount = countData.input || 0;
+                            return `選択 ${selectCount}回 / 入力 ${inputCount}回`;
+                        }
+                        // 古いデータ形式 (数値) の場合
+                        if (typeof countData === 'number') {
+                            return `合計 ${countData}回`; // 古いデータは合計として表示
+                        }
+                        // データがない場合
+                        return `選択 0回 / 入力 0回`;
+                    };
+
+                    countEasy.textContent = formatCountText('EASY');
+                    countNormal.textContent = formatCountText('NORMAL');
+                    countHard.textContent = formatCountText('HARD');
+                    countSuper.textContent = formatCountText('SUPER');
+                    countRandom.textContent = formatCountText('RANDOM');
+                    // ★★★ ここまで変更 ★★★
 
                     achievementsCard.style.display = 'block';
                 }
