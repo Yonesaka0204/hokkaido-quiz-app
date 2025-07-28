@@ -1,11 +1,11 @@
 // public/room.js
 
 const roomId = window.location.pathname.split('/')[2];
-document.getElementById('room-title').textContent = `待機部屋: ${roomId}`;
+const decodedRoomId = decodeURIComponent(roomId); // ★変更★ URLエンコードされた文字を元に戻す
+document.getElementById('room-title').textContent = `待機部屋: ${decodedRoomId}`;
 
 const socket = io();
 
-// ★★★ ここから追加 ★★★
 // --- シングルプレイかマルチプレイかを判定し、ボタン表示を切り替える ---
 const isSinglePlayer = sessionStorage.getItem('isSinglePlayer') === 'true';
 
@@ -36,7 +36,6 @@ if (isSinglePlayer) {
     startRankedButton.addEventListener('click', () => startQuiz(true));
     startFreeButton.addEventListener('click', () => startQuiz(false));
 }
-// ★★★ ここまで追加 ★★★
 
 
 socket.on('connect', () => {
