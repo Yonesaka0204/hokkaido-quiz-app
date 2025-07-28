@@ -361,11 +361,25 @@ io.on('connection', (socket) => {
                 resetQuizState(roomId);
             }
             
-            rooms[roomId].users = rooms[roomId].users.filter(user => 
-                user.isGuest ? user.name !== userProfile.name : user.uid !== userProfile.uid
-            );
+            // ゲストユーザーの名前が重複しないように処理する
+            if (userProfile.isGuest) {
+                let finalName = userProfile.name;
+                let counter = 2;
+                // ルーム内に同じ名前のユーザーが存在する限り、名前に番号を付ける
+                while (rooms[roomId].users.some(u => u.name === finalName)) {
+                    finalName = `${userProfile.name}(${counter})`;
+                    counter++;
+                }
+                userProfile.name = finalName; // 重複がなければ元の名前、あれば新しい名前をセット
+            }
+
+            // ユーザーが重複してルームに入らないように、一度リストから削除する（ログインユーザー向け）
+            if (!userProfile.isGuest) {
+                rooms[roomId].users = rooms[roomId].users.filter(user => user.uid !== userProfile.uid);
+            }
+
             rooms[roomId].users.push(userProfile);
-            socket.data = { roomId, userName: userProfile.name, uid: userProfile.uid };
+            socket.data = { roomId, userName: userProfile.name, uid: userProfile.uid }; // 更新された名前をsocket.dataに保存
             
             io.to(roomId).emit('room-users', rooms[roomId].users);
 
@@ -603,7 +617,6 @@ io.on('connection', (socket) => {
             rooms[roomId].users = rooms[roomId].users.filter(u => u.id !== socket.id);
             io.to(roomId).emit('room-users', rooms[roomId].users);
 
-            // ★★★ ここから変更 ★★★
             const state = rooms[roomId].quizState;
             // クイズが進行中だった場合の処理
             if (state.isActive && !userInRoom.eliminated) {
@@ -623,7 +636,6 @@ io.on('connection', (socket) => {
                     }, 7000);
                 }
             }
-            // ★★★ ここまで変更 ★★★
 
             // 部屋に誰もいなくなり、かつクイズが動いていなければ部屋を削除
             if (rooms[roomId].users.length === 0 && !state.isActive) {
