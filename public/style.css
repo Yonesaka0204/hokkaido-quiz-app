@@ -1,3 +1,6 @@
+/* Google Fontsからフォントを読み込み */
+@import url('https://fonts.googleapis.com/css2?family=Kosugi+Maru&family=Noto+Sans+JP:wght@400;700&display=swap');
+
 body {
     font-family: 'Helvetica Neue', 'Arial', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'Meiryo', sans-serif;
     display: flex;
@@ -18,7 +21,6 @@ body {
     text-align: center;
     width: 90%;
     max-width: 550px;
-    /* ★追加★ ページ読み込み時のアニメーション */
     animation: fadeInUp 0.6s ease-out forwards;
 }
 
@@ -51,6 +53,7 @@ hr {
     font-size: 1.1rem;
 }
 
+/* ★★★ ここからボタンのスタイルを変更 ★★★ */
 button,
 .option-btn,
 .auth-button {
@@ -65,21 +68,30 @@ button,
     border-radius: 5px;
     cursor: pointer;
     margin-top: 1.5rem;
-    transition: background-color 0.3s, transform 0.2s;
     box-sizing: border-box;
+    /* transitionにbox-shadowを追加 */
+    transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s;
+    /* 通常時から薄い影を追加 */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 button:hover,
 .option-btn:hover,
 .auth-button:hover {
     background-color: #2980b9;
+    /* ホバー時に少し浮き上がらせ、影を濃くする */
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 button:active,
 .option-btn:active,
 .auth-button:active {
-    transform: scale(0.98);
+    /* クリック時に押し込まれるように見せる */
+    transform: translateY(0px);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
+/* ★★★ ここまでボタンのスタイルを変更 ★★★ */
 
 .option-btn {
     background-color: #2ecc71;
@@ -93,6 +105,9 @@ button:active,
 button:disabled {
     background-color: #95a5a6;
     cursor: not-allowed;
+    /* disabled時はアニメーションを無効化 */
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 #result {
@@ -507,7 +522,7 @@ body.chat-is-open #chat-toggle-btn:hover {
     }
 }
 
-/* ★追加★ ページ読み込み時のアニメーション定義 */
+/* ★変更なし★ ページ読み込み時のアニメーション定義 */
 @keyframes fadeInUp {
   from {
     opacity: 0;
