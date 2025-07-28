@@ -530,9 +530,6 @@ body.chat-is-open #chat-toggle-btn:hover {
   }
 }
 
-/* ★★★ ここから変更 ★★★ */
-/* 以下の内容は、以前のバージョンの末尾に追加されています */
-
 /* 問題切り替え時のアニメーション用クラス */
 .quiz-item-enter {
     opacity: 0;
@@ -590,4 +587,3 @@ body.chat-is-open #chat-toggle-btn:hover {
     80% { transform: scale(1.5); opacity: 1; }
     100% { transform: scale(1.5); opacity: 0; }
 }
-/* ★★★ ここまで変更 ★★★ */
