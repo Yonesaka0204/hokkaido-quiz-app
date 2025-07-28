@@ -15,7 +15,7 @@ const multiPlayBtn = document.getElementById('multi-play-btn');
 // マルチプレイ用フォームの要素
 const multiplayerJoinForm = document.getElementById('multiplayer-join-form');
 const roomIdInputMulti = document.getElementById('room-id-input-multi');
-const backToMenuBtn = document.getElementById('back-to-menu-btn');
+// ★変更点★ backToMenuBtnに関する記述を削除
 
 // ゲスト用フォームの要素
 const joinRoomFormGuest = document.getElementById('join-room-form-guest');
@@ -66,11 +66,7 @@ multiPlayBtn.addEventListener('click', () => {
     multiplayerJoinForm.style.display = 'block';
 });
 
-// (マルチプレイフォームの) 戻るボタン
-backToMenuBtn.addEventListener('click', () => {
-    multiplayerJoinForm.style.display = 'none';
-    loggedInMenu.style.display = 'block';
-});
+// ★変更点★ backToMenuBtnのイベントリスナーを削除
 
 // マルチプレイフォームの送信
 multiplayerJoinForm.addEventListener('submit', (e) => {
