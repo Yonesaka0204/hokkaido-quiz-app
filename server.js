@@ -596,13 +596,37 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         const { roomId, userName } = socket.data;
         if (!roomId || !rooms[roomId]) return;
-        
+
         const userInRoom = rooms[roomId].users.find(u => u.id === socket.id);
         if (userInRoom) {
+            // 先にユーザーリストから退出させる
             rooms[roomId].users = rooms[roomId].users.filter(u => u.id !== socket.id);
             io.to(roomId).emit('room-users', rooms[roomId].users);
-            
-            if (rooms[roomId].users.length === 0 && !rooms[roomId].quizState.isActive) {
+
+            // ★★★ ここから変更 ★★★
+            const state = rooms[roomId].quizState;
+            // クイズが進行中だった場合の処理
+            if (state.isActive && !userInRoom.eliminated) {
+                console.log(`[Game Logic] Player ${userInRoom.name} disconnected during quiz.`);
+                
+                const remainingActivePlayers = rooms[roomId].users.filter(u => !u.eliminated);
+
+                // もし切断した人を除いて、全員の回答が揃った状態になったら、強制的に次のステップへ進める
+                if (state.answersReceived >= remainingActivePlayers.length) {
+                    console.log(`[Game Logic] All remaining players have answered. Proceeding...`);
+                    io.to(roomId).emit('all-answers-in');
+                    state.answersReceived = 0; // 回答数をリセット
+
+                    if (state.nextQuestionTimer) clearTimeout(state.nextQuestionTimer);
+                    state.nextQuestionTimer = setTimeout(() => {
+                        proceedToNextQuestion(roomId);
+                    }, 7000);
+                }
+            }
+            // ★★★ ここまで変更 ★★★
+
+            // 部屋に誰もいなくなり、かつクイズが動いていなければ部屋を削除
+            if (rooms[roomId].users.length === 0 && !state.isActive) {
                 console.log(`[部屋削除] room:${roomId} が空になったため、部屋の情報を削除します。`);
                 delete rooms[roomId];
             }
@@ -759,7 +783,6 @@ async function endQuiz(roomId) {
                         const difficulty = state.difficulty;
                         const formatKey = state.answerFormat === 'multiple-choice' ? 'select' : 'input';
                         
-                        // ★変更点★ 解答形式を判別して保存先を動的に変更
                         updateData[`achievements.perfectCounts.${difficulty}.${formatKey}`] = admin.firestore.FieldValue.increment(1);
 
                         if (difficulty === 'RANDOM') {
