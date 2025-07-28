@@ -11,12 +11,11 @@
         <h1>マイページ</h1>
         <div id="user-status" class="status-card" style="display: none;">
             <div class="status-item">
-                <span>ユーザー名</span>
-                <span id="username-display">---</span>
-            </div>
-            <div class="status-item">
                 <span>レベル</span>
-                <span id="level-display">--</span>
+                <span class="level-container">
+                    <span id="level-display">--</span>
+                    <span id="level-up-effect" class="level-up-hidden">LEVEL UP!</span>
+                </span>
             </div>
             <div class="status-item">
                 <span>レート</span>
@@ -87,7 +86,6 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-
     <script src="/firebase-config.js"></script>
     <script src="/mypage.js"></script>
 </body>

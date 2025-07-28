@@ -530,62 +530,64 @@ body.chat-is-open #chat-toggle-btn:hover {
   }
 }
 
-/* ★★★ ここから追加 ★★★ */
+/* ★★★ ここから変更 ★★★ */
+/* 以下の内容は、以前のバージョンの末尾に追加されています */
+
 /* 問題切り替え時のアニメーション用クラス */
 .quiz-item-enter {
-    /* 最初は非表示にしておく */
     opacity: 0;
-    /* アニメーションを適用 */
     animation: fadeInUp 0.5s ease-out forwards;
 }
-
-/* 遅延を設定するクラス */
 .quiz-item-enter.delay-1 { animation-delay: 0.1s; }
 .quiz-item-enter.delay-2 { animation-delay: 0.2s; }
 .quiz-item-enter.delay-3 { animation-delay: 0.3s; }
 .quiz-item-enter.delay-4 { animation-delay: 0.4s; }
-/* ★★★ ここまで追加 ★★★ */
 
-/* ページ読み込み時のアニメーション定義 */
-@keyframes fadeInUp {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  
-  /* 問題切り替え時のアニメーション用クラス */
-  .quiz-item-enter {
-      opacity: 0;
-      animation: fadeInUp 0.5s ease-out forwards;
-  }
-  .quiz-item-enter.delay-1 { animation-delay: 0.1s; }
-  .quiz-item-enter.delay-2 { animation-delay: 0.2s; }
-  .quiz-item-enter.delay-3 { animation-delay: 0.3s; }
-  .quiz-item-enter.delay-4 { animation-delay: 0.4s; }
-  
-  /* ★★★ ここから追加 ★★★ */
-  
-  /* 文字がポップアップするアニメーション定義 */
-  @keyframes verdict-pop {
-    0% { transform: scale(0.8); opacity: 0; }
-    70% { transform: scale(1.1); opacity: 1; }
-    100% { transform: scale(1.0); }
-  }
-  
-  /* アニメーションを適用するクラス */
-  .flash-correct {
-      animation: flash-correct 0.5s ease-out;
-  }
-  .flash-incorrect {
-      animation: flash-incorrect 0.5s ease-out;
-  }
-  .verdict-pop-animation {
-      /* アニメーションを適用し、アニメーションが終わった後も表示を保つ */
-      animation: verdict-pop 0.5s ease-out forwards;
-  }
-  /* ★★★ ここまで追加 ★★★ */
+/* 正解・不正解演出用のアニメーション */
+.verdict-pop-animation {
+    animation: verdict-pop 0.5s ease-out forwards;
+}
+@keyframes verdict-pop {
+  0% { transform: scale(0.8); opacity: 0; }
+  70% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1.0); }
+}
+
+/* レベルアップ演出用のスタイル */
+.level-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+#level-display.level-up-pop {
+    animation: levelUpPop 0.5s ease-out;
+}
+
+#level-up-effect {
+    position: absolute;
+    right: 0;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #f39c12; /* オレンジ色 */
+    text-shadow: 0 0 5px white;
+    opacity: 0;
+    transition: opacity 0.3s ease-out;
+}
+
+#level-up-effect.show {
+    animation: levelUpPop 1.5s ease-out forwards;
+}
+
+.level-up-hidden {
+    display: none;
+}
+
+@keyframes levelUpPop {
+    0% { transform: scale(1); opacity: 0; }
+    20% { transform: scale(1.5); opacity: 1; }
+    80% { transform: scale(1.5); opacity: 1; }
+    100% { transform: scale(1.5); opacity: 0; }
+}
+/* ★★★ ここまで変更 ★★★ */
