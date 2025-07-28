@@ -1,7 +1,7 @@
 // public/room.js
 
 const roomId = window.location.pathname.split('/')[2];
-const decodedRoomId = decodeURIComponent(roomId); // ★変更★ URLエンコードされた文字を元に戻す
+const decodedRoomId = decodeURIComponent(roomId);
 document.getElementById('room-title').textContent = `待機部屋: ${decodedRoomId}`;
 
 const socket = io();
@@ -109,7 +109,8 @@ socket.on('quiz-start-failed', (data) => {
         if (startRankedButton && startFreeButton) {
             startRankedButton.disabled = false;
             startFreeButton.disabled = false;
-            startRankedButton.textContent = 'レートマッチで開始！';
+            // ★変更点★ テキストから「！」を削除
+            startRankedButton.textContent = 'レートマッチで開始';
             startFreeButton.textContent = 'フリーマッチで開始';
         }
     }
