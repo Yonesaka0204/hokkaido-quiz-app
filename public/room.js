@@ -5,6 +5,40 @@ document.getElementById('room-title').textContent = `待機部屋: ${roomId}`;
 
 const socket = io();
 
+// ★★★ ここから追加 ★★★
+// --- シングルプレイかマルチプレイかを判定し、ボタン表示を切り替える ---
+const isSinglePlayer = sessionStorage.getItem('isSinglePlayer') === 'true';
+
+const startRankedButton = document.getElementById('start-ranked-button');
+const startFreeButton = document.getElementById('start-free-button');
+const matchTypeSelector = document.getElementById('match-type-selector');
+
+if (isSinglePlayer) {
+    // シングルプレイの場合
+    matchTypeSelector.innerHTML = '<button id="start-single-button" class="auth-button">クイズを開始</button>';
+    const startSingleButton = document.getElementById('start-single-button');
+    startSingleButton.addEventListener('click', () => {
+        startSingleButton.disabled = true;
+        startSingleButton.textContent = '準備中...';
+        
+        const selectedDifficulty = document.querySelector('input[name="difficulty"]:checked').value;
+        const selectedFormat = document.querySelector('input[name="answerFormat"]:checked').value;
+        
+        socket.emit('start-quiz', { 
+            roomId, 
+            difficulty: selectedDifficulty, 
+            answerFormat: selectedFormat,
+            isRanked: false // シングルプレイは常にフリーマッチ
+        });
+    });
+} else {
+    // マルチプレイの場合 (既存のロジック)
+    startRankedButton.addEventListener('click', () => startQuiz(true));
+    startFreeButton.addEventListener('click', () => startQuiz(false));
+}
+// ★★★ ここまで追加 ★★★
+
+
 socket.on('connect', () => {
     auth.onAuthStateChanged((user) => {
         const guestName = sessionStorage.getItem('guestName');
@@ -19,6 +53,7 @@ socket.on('connect', () => {
         } else if (guestName) {
             socket.emit('join-room', { roomId, name: guestName });
         } else {
+            // シングルプレイ時はログイン必須なので、このルートは主にURL直叩きなどのケース
             alert('参加情報がないため、トップページに戻ります。');
             window.location.href = '/';
         }
@@ -36,9 +71,8 @@ socket.on('room-users', (users) => {
     });
 });
 
-const startRankedButton = document.getElementById('start-ranked-button');
-const startFreeButton = document.getElementById('start-free-button');
 
+// マルチプレイ用の関数 (isSinglePlayerがfalseの場合のみ使われる)
 function startQuiz(isRanked) {
     startRankedButton.disabled = true;
     startFreeButton.disabled = true;
@@ -56,22 +90,29 @@ function startQuiz(isRanked) {
     });
 }
 
-if (startRankedButton && startFreeButton) {
-    startRankedButton.addEventListener('click', () => startQuiz(true));
-    startFreeButton.addEventListener('click', () => startQuiz(false));
-}
-
 socket.on('quiz-start', ({ roomId }) => {
+    // クイズ開始時にシングルプレイの記録を削除
+    sessionStorage.removeItem('isSinglePlayer');
     window.location.href = `/room/${roomId}/quiz`;
 });
 
 socket.on('quiz-start-failed', (data) => {
     alert(data.message);
-    if (startRankedButton && startFreeButton) {
-        startRankedButton.disabled = false;
-        startFreeButton.disabled = false;
-        startRankedButton.textContent = 'レートマッチで開始！';
-        startFreeButton.textContent = 'フリーマッチで開始';
+    
+    // ボタンの状態を元に戻す
+    if (isSinglePlayer) {
+        const startSingleButton = document.getElementById('start-single-button');
+        if(startSingleButton) {
+            startSingleButton.disabled = false;
+            startSingleButton.textContent = 'クイズを開始';
+        }
+    } else {
+        if (startRankedButton && startFreeButton) {
+            startRankedButton.disabled = false;
+            startFreeButton.disabled = false;
+            startRankedButton.textContent = 'レートマッチで開始！';
+            startFreeButton.textContent = 'フリーマッチで開始';
+        }
     }
 });
 

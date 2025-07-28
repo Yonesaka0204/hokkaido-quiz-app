@@ -12,16 +12,23 @@
         
         <div id="logged-in-view" style="display: none;">
             <p><span id="username-display"></span> (Lv. <span id="level-display">1</span>) さん、ようこそ！</p>
-            <form id="join-room-form-authed">
-                <p>参加する部屋IDを入力してください</p>
-                <input id="room-id-input-authed" placeholder="部屋ID" required autocomplete="off" class="auth-input">
-                <button type="submit">ログインして参加</button>
+            
+            <div id="logged-in-menu">
+                <button id="single-play-btn" class="auth-button" style="background-color: #2ecc71;">シングルプレイ</button>
+                <button id="multi-play-btn" class="auth-button" style="background-color: #3498db;">マルチプレイ</button>
+                <a href="/mypage" class="auth-button" style="background-color: #28a745;">マイページ</a> 
+                <a href="/ranking" class="auth-button" style="background-color: #f39c12;">ランキング</a>
+            </div>
+
+            <form id="multiplayer-join-form" style="display: none; margin-top: 1.5rem;">
+                <p>参加する部屋の「合言葉」を入力してください</p>
+                <input id="room-id-input-multi" placeholder="合言葉" required autocomplete="off" class="auth-input">
+                <button type="submit">部屋へ移動</button>
+                <button type="button" id="back-to-menu-btn" class="secondary-btn" style="margin-top: 0.5rem;">戻る</button>
             </form>
-            <a href="/mypage" class="auth-button" style="background-color: #28a745; margin-top: 1rem;">マイページ</a> 
-            <a href="/ranking" class="auth-button" style="background-color: #f39c12;">ランキング</a>
+
             <button id="logout-btn" class="secondary-btn" style="margin-top: 1rem;">ログアウト</button>
         </div>
-        
         <div id="logged-out-view" style="display: none;">
             <div class="auth-section">
                 <p>アカウントにログインすると成績が記録されます。</p>
