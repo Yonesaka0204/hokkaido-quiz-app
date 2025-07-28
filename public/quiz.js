@@ -13,7 +13,7 @@ const resultEl = document.getElementById('result');
 const backToLobbyBtn = document.getElementById('back-to-lobby-btn');
 const playerStatusContainer = document.getElementById('player-status-container');
 const playerStatusList = document.getElementById('player-status-list');
-const feedbackOverlay = document.getElementById('feedback-overlay'); // ★追加★
+// feedbackOverlay の宣言は削除済み
 
 socket.on('connect', () => {
     auth.onAuthStateChanged((user) => {
@@ -148,13 +148,11 @@ socket.on('answer-result', ({ correct, correctAnswer, trivia, eliminated }) => {
     verdictEl.className = 'result-verdict';
     resultContainer.appendChild(verdictEl);
     
-    // ★★★ ここからアニメーション処理を追加 ★★★
     verdictEl.classList.add('verdict-pop-animation');
     
     if (correct) {
         verdictEl.textContent = '正解！';
         verdictEl.classList.add('correct');
-        feedbackOverlay.className = 'flash-correct';
     } else {
         verdictEl.textContent = eliminated ? 'ここで脱落！' : '残念！';
         verdictEl.classList.add('incorrect');
@@ -162,15 +160,11 @@ socket.on('answer-result', ({ correct, correctAnswer, trivia, eliminated }) => {
         correctAnswerEl.className = 'result-correct-answer';
         correctAnswerEl.innerHTML = `正解は「<span>${correctAnswer}</span>」でした。`;
         resultContainer.appendChild(correctAnswerEl);
-        feedbackOverlay.className = 'flash-incorrect';
     }
     
-    // アニメーションクラスを一定時間後に削除し、再実行できるようにする
     setTimeout(() => {
-        feedbackOverlay.className = '';
         verdictEl.classList.remove('verdict-pop-animation');
     }, 500);
-    // ★★★ ここまでアニメーション処理 ★★★
     
     const triviaContainer = document.createElement('div');
     triviaContainer.className = 'result-trivia';

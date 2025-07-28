@@ -569,31 +569,6 @@ body.chat-is-open #chat-toggle-btn:hover {
   .quiz-item-enter.delay-4 { animation-delay: 0.4s; }
   
   /* ★★★ ここから追加 ★★★ */
-  /* 正解・不正解演出用のアニメーション */
-  
-  /* 背景フラッシュ用のオーバーレイのスタイル */
-  #feedback-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 9999;
-      pointer-events: none; /* クリックを透過させる */
-      opacity: 0;
-  }
-  
-  /* 背景フラッシュのアニメーション定義 */
-  @keyframes flash-correct {
-    0% { opacity: 0; background-color: rgba(46, 204, 113, 0.2); }
-    50% { opacity: 1; }
-    100% { opacity: 0; }
-  }
-  @keyframes flash-incorrect {
-    0% { opacity: 0; background-color: rgba(231, 76, 60, 0.2); }
-    50% { opacity: 1; }
-    100% { opacity: 0; }
-  }
   
   /* 文字がポップアップするアニメーション定義 */
   @keyframes verdict-pop {
