@@ -140,21 +140,19 @@ button:disabled {
     display: none;
 }
 
-/* ★★★ ここからラベルのスタイルを変更 ★★★ */
 .difficulty-options label,
 .format-options label {
-    display: inline-flex; /* Flexboxに変更 */
-    align-items: center;  /* 垂直中央揃え */
-    justify-content: center; /* 水平中央揃え */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     padding: 0.5rem 1rem;
     border: 1px solid #ced4da;
     border-radius: 20px;
     cursor: pointer;
     transition: all 0.2s ease-in-out;
     background-color: #fff;
-    min-height: 24px; /* 高さを担保 */
+    min-height: 24px;
 }
-/* ★★★ ここまでラベルのスタイルを変更 ★★★ */
 
 .difficulty-options input[type="radio"]:checked + label {
     background-color: #007bff;
@@ -531,3 +529,19 @@ body.chat-is-open #chat-toggle-btn:hover {
     transform: translateY(0);
   }
 }
+
+/* ★★★ ここから追加 ★★★ */
+/* 問題切り替え時のアニメーション用クラス */
+.quiz-item-enter {
+    /* 最初は非表示にしておく */
+    opacity: 0;
+    /* アニメーションを適用 */
+    animation: fadeInUp 0.5s ease-out forwards;
+}
+
+/* 遅延を設定するクラス */
+.quiz-item-enter.delay-1 { animation-delay: 0.1s; }
+.quiz-item-enter.delay-2 { animation-delay: 0.2s; }
+.quiz-item-enter.delay-3 { animation-delay: 0.3s; }
+.quiz-item-enter.delay-4 { animation-delay: 0.4s; }
+/* ★★★ ここまで追加 ★★★ */

@@ -50,6 +50,9 @@ socket.on('new-question', (data) => {
     progressEl.textContent = `第 ${data.questionNumber} / ${data.totalQuestions} 問`;
     questionEl.textContent = data.question.question;
 
+    // ★追加★ 問題文にアニメーションクラスを付与
+    questionEl.className = 'quiz-item-enter';
+
     playerStatusContainer.style.display = 'block';
     playerStatusList.innerHTML = '';
     data.users.forEach(user => {
@@ -61,10 +64,12 @@ socket.on('new-question', (data) => {
     });
 
     if (!isEliminated && data.answerFormat === 'multiple-choice') {
-        data.options.forEach(optionText => {
+        data.options.forEach((optionText, index) => {
             const button = document.createElement('button');
             button.textContent = optionText;
             button.className = 'option-btn';
+            // ★追加★ 選択肢ボタンに遅延アニメーションクラスを付与
+            button.classList.add('quiz-item-enter', `delay-${index + 1}`);
             button.addEventListener('click', () => handleSubmit(optionText, data.question.question));
             optionsContainer.appendChild(button);
         });
@@ -78,17 +83,22 @@ socket.on('new-question', (data) => {
         input.autocapitalize = 'off';
         input.spellcheck = false;
         
-        // ★追加★ Chromeの自動入力を回避する設定
         input.readOnly = true;
         input.onfocus = () => { 
             input.readOnly = false;
-            // 一度だけ実行されれば良いので、自分自身を削除する
             input.onfocus = null; 
         };
+        
+        // ★追加★ 入力欄に遅延アニメーションクラスを付与
+        input.classList.add('quiz-item-enter', 'delay-1');
 
         const submitButton = document.createElement('button');
         submitButton.textContent = '解答する';
         submitButton.className = 'option-btn';
+
+        // ★追加★ 解答ボタンに遅延アニメーションクラスを付与
+        submitButton.classList.add('quiz-item-enter', 'delay-2');
+
         const submitHandler = () => handleSubmit(input.value, data.question.question);
         submitButton.addEventListener('click', submitHandler);
         input.addEventListener('keypress', (e) => {
