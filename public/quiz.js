@@ -13,6 +13,7 @@ const resultEl = document.getElementById('result');
 const backToLobbyBtn = document.getElementById('back-to-lobby-btn');
 const playerStatusContainer = document.getElementById('player-status-container');
 const playerStatusList = document.getElementById('player-status-list');
+const feedbackOverlay = document.getElementById('feedback-overlay'); // ★追加★
 
 socket.on('connect', () => {
     auth.onAuthStateChanged((user) => {
@@ -50,7 +51,6 @@ socket.on('new-question', (data) => {
     progressEl.textContent = `第 ${data.questionNumber} / ${data.totalQuestions} 問`;
     questionEl.textContent = data.question.question;
 
-    // ★追加★ 問題文にアニメーションクラスを付与
     questionEl.className = 'quiz-item-enter';
 
     playerStatusContainer.style.display = 'block';
@@ -68,7 +68,6 @@ socket.on('new-question', (data) => {
             const button = document.createElement('button');
             button.textContent = optionText;
             button.className = 'option-btn';
-            // ★追加★ 選択肢ボタンに遅延アニメーションクラスを付与
             button.classList.add('quiz-item-enter', `delay-${index + 1}`);
             button.addEventListener('click', () => handleSubmit(optionText, data.question.question));
             optionsContainer.appendChild(button);
@@ -89,14 +88,12 @@ socket.on('new-question', (data) => {
             input.onfocus = null; 
         };
         
-        // ★追加★ 入力欄に遅延アニメーションクラスを付与
         input.classList.add('quiz-item-enter', 'delay-1');
 
         const submitButton = document.createElement('button');
         submitButton.textContent = '解答する';
         submitButton.className = 'option-btn';
 
-        // ★追加★ 解答ボタンに遅延アニメーションクラスを付与
         submitButton.classList.add('quiz-item-enter', 'delay-2');
 
         const submitHandler = () => handleSubmit(input.value, data.question.question);
@@ -150,10 +147,14 @@ socket.on('answer-result', ({ correct, correctAnswer, trivia, eliminated }) => {
     const verdictEl = document.createElement('h3');
     verdictEl.className = 'result-verdict';
     resultContainer.appendChild(verdictEl);
-
+    
+    // ★★★ ここからアニメーション処理を追加 ★★★
+    verdictEl.classList.add('verdict-pop-animation');
+    
     if (correct) {
         verdictEl.textContent = '正解！';
         verdictEl.classList.add('correct');
+        feedbackOverlay.className = 'flash-correct';
     } else {
         verdictEl.textContent = eliminated ? 'ここで脱落！' : '残念！';
         verdictEl.classList.add('incorrect');
@@ -161,7 +162,15 @@ socket.on('answer-result', ({ correct, correctAnswer, trivia, eliminated }) => {
         correctAnswerEl.className = 'result-correct-answer';
         correctAnswerEl.innerHTML = `正解は「<span>${correctAnswer}</span>」でした。`;
         resultContainer.appendChild(correctAnswerEl);
+        feedbackOverlay.className = 'flash-incorrect';
     }
+    
+    // アニメーションクラスを一定時間後に削除し、再実行できるようにする
+    setTimeout(() => {
+        feedbackOverlay.className = '';
+        verdictEl.classList.remove('verdict-pop-animation');
+    }, 500);
+    // ★★★ ここまでアニメーション処理 ★★★
     
     const triviaContainer = document.createElement('div');
     triviaContainer.className = 'result-trivia';

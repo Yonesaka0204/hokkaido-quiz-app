@@ -545,3 +545,72 @@ body.chat-is-open #chat-toggle-btn:hover {
 .quiz-item-enter.delay-3 { animation-delay: 0.3s; }
 .quiz-item-enter.delay-4 { animation-delay: 0.4s; }
 /* ★★★ ここまで追加 ★★★ */
+
+/* ページ読み込み時のアニメーション定義 */
+@keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  /* 問題切り替え時のアニメーション用クラス */
+  .quiz-item-enter {
+      opacity: 0;
+      animation: fadeInUp 0.5s ease-out forwards;
+  }
+  .quiz-item-enter.delay-1 { animation-delay: 0.1s; }
+  .quiz-item-enter.delay-2 { animation-delay: 0.2s; }
+  .quiz-item-enter.delay-3 { animation-delay: 0.3s; }
+  .quiz-item-enter.delay-4 { animation-delay: 0.4s; }
+  
+  /* ★★★ ここから追加 ★★★ */
+  /* 正解・不正解演出用のアニメーション */
+  
+  /* 背景フラッシュ用のオーバーレイのスタイル */
+  #feedback-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 9999;
+      pointer-events: none; /* クリックを透過させる */
+      opacity: 0;
+  }
+  
+  /* 背景フラッシュのアニメーション定義 */
+  @keyframes flash-correct {
+    0% { opacity: 0; background-color: rgba(46, 204, 113, 0.2); }
+    50% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  @keyframes flash-incorrect {
+    0% { opacity: 0; background-color: rgba(231, 76, 60, 0.2); }
+    50% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  
+  /* 文字がポップアップするアニメーション定義 */
+  @keyframes verdict-pop {
+    0% { transform: scale(0.8); opacity: 0; }
+    70% { transform: scale(1.1); opacity: 1; }
+    100% { transform: scale(1.0); }
+  }
+  
+  /* アニメーションを適用するクラス */
+  .flash-correct {
+      animation: flash-correct 0.5s ease-out;
+  }
+  .flash-incorrect {
+      animation: flash-incorrect 0.5s ease-out;
+  }
+  .verdict-pop-animation {
+      /* アニメーションを適用し、アニメーションが終わった後も表示を保つ */
+      animation: verdict-pop 0.5s ease-out forwards;
+  }
+  /* ★★★ ここまで追加 ★★★ */
