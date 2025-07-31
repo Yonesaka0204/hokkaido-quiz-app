@@ -337,35 +337,56 @@ button:disabled {
     }
 }
 
-/* --- ランキングのページネーション用スタイル --- */
+/* --- ランキングのページネーション用スタイル (ここから変更) --- */
 .pagination-controls {
     margin-top: 1.5rem;
     display: flex;
     justify-content: center;
+    align-items: center; /* ボタンの縦位置を中央揃えに */
     gap: 0.5rem;
     flex-wrap: wrap;
 }
 
 .pagination-btn {
-    padding: 0.5rem 0.75rem;
-    border: 1px solid #ddd;
-    background-color: #fff;
-    cursor: pointer;
-    border-radius: 4px;
-    transition: background-color 0.2s, color 0.2s;
+    /* 円形にするための設定 */
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    padding: 0; /* 内側の余白をリセット */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    /* 通常時のデザイン */
     font-size: 1rem;
+    font-weight: bold;
+    color: #3498db; /* 青文字 */
+    background-color: #fff;
+    border: 2px solid #3498db; /* 青枠 */
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
 }
 
 .pagination-btn:hover {
-    background-color: #f0f0f0;
+    background-color: #3498db; /* 青背景 */
+    color: #fff; /* 白文字 */
 }
 
 .pagination-btn.active {
-    background-color: #3498db;
-    color: white;
-    border-color: #3498db;
-    font-weight: bold;
+    background-color: #3498db; /* 青背景 */
+    color: #fff; /* 白文字 */
+    cursor: default;
 }
+
+/* 「前へ」「次へ」が無効な時のスタイルを追加 */
+.pagination-btn:disabled {
+    color: #ccc;
+    border-color: #ccc;
+    background-color: #f7f7f7;
+    cursor: not-allowed;
+}
+/* --- ランキングのページネーション用スタイル (ここまで変更) --- */
+
 
 /* --- 参加者ステータス表示用のスタイル --- */
 #player-status-container {
@@ -440,9 +461,9 @@ body.chat-is-open #player-status-container {
 }
 
 #chat-toggle-btn {
-    position: fixed; /* ★変更: relative から fixed へ */
-    top: 20px;       /* ★追加: 画面上からの位置 */
-    right: 20px;      /* ★追加: 画面右からの位置 */
+    position: fixed;
+    top: 20px;
+    right: 20px;
     width: 50px;
     height: 50px;
     border-radius: 50%;
@@ -455,9 +476,9 @@ body.chat-is-open #player-status-container {
     justify-content: center;
     align-items: center;
     padding: 0;
-    margin: 0; /* ★変更: 不要なマージンを削除 */
+    margin: 0;
     flex-shrink: 0;
-    transition: all 0.3s ease-in-out; /* ★変更: transformだけでなく全体に適用 */
+    transition: all 0.3s ease-in-out;
     z-index: 1000;
 }
 #chat-toggle-btn:hover {
@@ -465,6 +486,7 @@ body.chat-is-open #player-status-container {
 }
 body.chat-is-open #chat-toggle-btn {
     background-color: #e74c3c;
+    transform: translateX(-300px);
 }
 body.chat-is-open #chat-toggle-btn:hover {
     background-color: #c0392b;
@@ -507,10 +529,6 @@ body.chat-is-open #chat-toggle-btn:hover {
     margin-top: 1rem;
 }
 
-/* ★★★ このルールをファイルの下の方に追加 ★★★ */
-body.chat-is-open #chat-toggle-btn {
-    transform: translateX(-300px);
-}
 
 /* --- スマホ表示用の調整 --- */
 @media (max-width: 600px) {
@@ -521,6 +539,7 @@ body.chat-is-open #chat-toggle-btn {
         top: 10px;
     }
     .container {
+        padding: 1.5rem;
         margin-top: 120px;
     }
 }
