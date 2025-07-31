@@ -52,7 +52,7 @@ function renderList(listElement, data, page, type) {
     });
 }
 
-// --- ページネーションのボタンを描画する関数 (改善案1適用後) ---
+// --- ページネーションのボタンを描画する関数 ---
 function renderPagination(paginationElement, totalItems, currentPage, onPageClick) {
     paginationElement.innerHTML = '';
     const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
@@ -83,8 +83,8 @@ function renderPagination(paginationElement, totalItems, currentPage, onPageClic
         paginationElement.appendChild(span);
     };
 
-    // 「前へ」ボタン
-    createButton('« 前へ', currentPage - 1, currentPage === 1);
+    // 「前へ」ボタン (記号に変更)
+    createButton('<', currentPage - 1, currentPage === 1);
 
     // 表示するページ番号を決定する
     const pageNumbersToShow = new Set();
@@ -108,8 +108,8 @@ function renderPagination(paginationElement, totalItems, currentPage, onPageClic
         lastPage = page;
     }
 
-    // 「次へ」ボタン
-    createButton('次へ »', currentPage + 1, currentPage === totalPages);
+    // 「次へ」ボタン (記号に変更)
+    createButton('>', currentPage + 1, currentPage === totalPages);
 }
 
 
