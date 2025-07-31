@@ -5,6 +5,7 @@ const path = require('path');
 const admin = require('firebase-admin');
 
 try {
+    // Render環境では環境変数から、ローカルではファイルから読み込む
     const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
     if (!serviceAccountString) {
         throw new Error('Firebaseの認証情報が環境変数に設定されていません。');
@@ -320,6 +321,7 @@ const allQuizData = [
     { question: "茶安別", answer: "ちゃんべつ", difficulty: "SUPER", dummies: ["ちゃやすべつ", "さあんべつ"], trivia: "浜中町にある地名。アイヌ語で「川が打ちつける」が由来。" },
     { question: "屈斜路", answer: "くっしゃろ", difficulty: "SUPER", dummies: ["くつしゃろ", "くっしゃじ"], trivia: "弟子屈町にある湖。アイヌ語で「沼の喉元（出口）」が由来。" }
 ];
+
 const rooms = {};
 
 app.use(express.static(path.join(__dirname, 'public')));
@@ -361,25 +363,22 @@ io.on('connection', (socket) => {
                 resetQuizState(roomId);
             }
             
-            // ゲストユーザーの名前が重複しないように処理する
             if (userProfile.isGuest) {
                 let finalName = userProfile.name;
                 let counter = 2;
-                // ルーム内に同じ名前のユーザーが存在する限り、名前に番号を付ける
                 while (rooms[roomId].users.some(u => u.name === finalName)) {
                     finalName = `${userProfile.name}(${counter})`;
                     counter++;
                 }
-                userProfile.name = finalName; // 重複がなければ元の名前、あれば新しい名前をセット
+                userProfile.name = finalName;
             }
 
-            // ユーザーが重複してルームに入らないように、一度リストから削除する（ログインユーザー向け）
             if (!userProfile.isGuest) {
                 rooms[roomId].users = rooms[roomId].users.filter(user => user.uid !== userProfile.uid);
             }
 
             rooms[roomId].users.push(userProfile);
-            socket.data = { roomId, userName: userProfile.name, uid: userProfile.uid }; // 更新された名前をsocket.dataに保存
+            socket.data = { roomId, userName: userProfile.name, uid: userProfile.uid };
             
             io.to(roomId).emit('room-users', rooms[roomId].users);
 
@@ -461,10 +460,18 @@ io.on('connection', (socket) => {
 
             socket.join(roomId);
 
-            rooms[roomId].users = rooms[roomId].users.filter(user =>
-                user.isGuest ? user.name !== userProfile.name : user.uid !== userProfile.uid
+            const existingUserIndex = rooms[roomId].users.findIndex(user =>
+                user.isGuest ? user.name === userProfile.name : user.uid === userProfile.uid
             );
-            rooms[roomId].users.push(userProfile);
+
+            if (existingUserIndex !== -1) {
+                // 同じユーザーが再接続した場合、socket.idを更新
+                rooms[roomId].users[existingUserIndex].id = socket.id;
+            } else {
+                // 新しいユーザーの場合、リストに追加
+                rooms[roomId].users.push(userProfile);
+            }
+            
             socket.data = { roomId, userName: userProfile.name, uid: userProfile.uid };
 
             const state = room.quizState;
@@ -489,7 +496,17 @@ io.on('connection', (socket) => {
         const player = room.users.find(u => u.id === socket.id);
         if (!player || player.eliminated) return;
 
+        // 【バグ4修正】既に回答済みかチェック
+        const playerIdentifier = player.uid || player.name;
+        if (state.answeredPlayers.has(playerIdentifier)) {
+            console.log(`[Validation] Player ${player.name} has already answered.`);
+            return;
+        }
+        
         if (question && question.question === questionText) {
+            // 【バグ4修正】回答済みとして記録
+            state.answeredPlayers.add(playerIdentifier);
+
             const isCorrect = (question.answer === answer.trim());
             const key = player.uid || player.name;
             
@@ -537,6 +554,7 @@ io.on('connection', (socket) => {
         }
     });
 
+    // ... (get-rankings, get-user-profile, send-chat-message, return-to-lobby は変更なし)
     socket.on('get-rankings', async () => {
         try {
             const levelSnapshot = await db.collection('users').orderBy('level', 'desc').orderBy('xp', 'desc').limit(100).get();
@@ -613,22 +631,19 @@ io.on('connection', (socket) => {
 
         const userInRoom = rooms[roomId].users.find(u => u.id === socket.id);
         if (userInRoom) {
-            // 先にユーザーリストから退出させる
             rooms[roomId].users = rooms[roomId].users.filter(u => u.id !== socket.id);
             io.to(roomId).emit('room-users', rooms[roomId].users);
 
             const state = rooms[roomId].quizState;
-            // クイズが進行中だった場合の処理
             if (state.isActive && !userInRoom.eliminated) {
                 console.log(`[Game Logic] Player ${userInRoom.name} disconnected during quiz.`);
                 
                 const remainingActivePlayers = rooms[roomId].users.filter(u => !u.eliminated);
 
-                // もし切断した人を除いて、全員の回答が揃った状態になったら、強制的に次のステップへ進める
                 if (state.answersReceived >= remainingActivePlayers.length) {
                     console.log(`[Game Logic] All remaining players have answered. Proceeding...`);
                     io.to(roomId).emit('all-answers-in');
-                    state.answersReceived = 0; // 回答数をリセット
+                    state.answersReceived = 0;
 
                     if (state.nextQuestionTimer) clearTimeout(state.nextQuestionTimer);
                     state.nextQuestionTimer = setTimeout(() => {
@@ -637,7 +652,6 @@ io.on('connection', (socket) => {
                 }
             }
 
-            // 部屋に誰もいなくなり、かつクイズが動いていなければ部屋を削除
             if (rooms[roomId].users.length === 0 && !state.isActive) {
                 console.log(`[部屋削除] room:${roomId} が空になったため、部屋の情報を削除します。`);
                 delete rooms[roomId];
@@ -651,6 +665,8 @@ function sendNextQuestion(roomId) {
     if (!room || !room.quizState.isActive) return;
 
     const state = room.quizState;
+    // 【バグ4修正】回答済みプレイヤーのセットをリセット
+    state.answeredPlayers.clear();
     
     const activePlayers = room.users.filter(u => !u.eliminated);
     if (activePlayers.length === 0) {
@@ -707,11 +723,19 @@ function proceedToNextQuestion(roomId) {
 
     const state = room.quizState;
 
+    // 【バグ5修正】進行処理の重複実行を防止
+    if (state.isProceeding) return;
+    state.isProceeding = true;
+
     if (state.nextQuestionTimer) {
         clearTimeout(state.nextQuestionTimer);
         state.nextQuestionTimer = null;
     } else {
-        if(state.readyPlayers.size < room.users.filter(u => !u.eliminated).length) return;
+        if(state.readyPlayers.size < room.users.filter(u => !u.eliminated).length) {
+             // 【バグ5修正】ロックを解除して終了
+            state.isProceeding = false;
+            return;
+        }
     }
 
     state.readyPlayers.clear();
@@ -725,8 +749,12 @@ function proceedToNextQuestion(roomId) {
     } else {
         endQuiz(roomId);
     }
+    
+    // 【バグ5修正】ロックを解除
+    state.isProceeding = false;
 }
 
+// ... (endQuiz関数は変更なし)
 async function endQuiz(roomId) {
     const room = rooms[roomId];
     if (!room || !room.quizState.isActive) return;
@@ -820,15 +848,20 @@ async function endQuiz(roomId) {
                         if (state.difficulty === 'ENDLESS') {
                             xpGained = Math.floor(xpGained * (score / 10));
                         }
-
-                        const newXp = (data.xp || 0) + xpGained;
-                        let newLevel = data.level || 1;
-                        const xpForNextLevel = Math.floor(100 * Math.pow(newLevel, 1.5));
                         
-                        if (newXp >= xpForNextLevel) newLevel++;
+                        // XPとレベルの更新ロジックを修正
+                        let currentLevel = data.level || 1;
+                        let currentXp = (data.xp || 0) + xpGained;
+                        let xpForNextLevel = Math.floor(100 * Math.pow(currentLevel, 1.5));
                         
-                        updateData.xp = newXp;
-                        updateData.level = newLevel;
+                        while(currentXp >= xpForNextLevel){
+                           currentXp -= xpForNextLevel;
+                           currentLevel++;
+                           xpForNextLevel = Math.floor(100 * Math.pow(currentLevel, 1.5));
+                        }
+                        
+                        updateData.xp = currentXp;
+                        updateData.level = currentLevel;
 
                         const newTotalCorrect = (data.totalCorrect || 0) + score;
                         updateData.totalCorrect = newTotalCorrect;
@@ -852,6 +885,7 @@ async function endQuiz(roomId) {
     resetQuizState(roomId);
 }
 
+// 【バグ4,5修正】 quizStateに新しいプロパティを追加
 function resetQuizState(roomId) {
     if (rooms[roomId]) {
         rooms[roomId].quizState = {
@@ -865,7 +899,9 @@ function resetQuizState(roomId) {
             readyPlayers: new Set(),
             answerFormat: 'multiple-choice', 
             playerCount: 0,
-            nextQuestionTimer: null
+            nextQuestionTimer: null,
+            answeredPlayers: new Set(), // 回答済みプレイヤーを記録
+            isProceeding: false,      // 進行処理中のフラグ
         };
     }
 }
