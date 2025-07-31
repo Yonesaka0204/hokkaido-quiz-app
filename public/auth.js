@@ -1,10 +1,4 @@
-// ★★★ firebaseConfigとinitializeAppの行を削除しました ★★★
-// (これらの処理は新しいfirebase-config.jsに集約されます)
-
-function showAuthError(error) {
-    console.error("Authentication Error:", error.code, error.message);
-    alert(`エラー (${error.code}): ${error.message.split('(')[0]}`);
-}
+// public/auth.js
 
 // --- 新規登録ページのロジック ---
 const signupForm = document.getElementById('signup-form');
@@ -20,11 +14,12 @@ if (signupForm) {
             return;
         }
 
+        // 'auth'はfirebase-config.jsで定義されたグローバル変数を使用
         auth.createUserWithEmailAndPassword(email, password)
             .then((userCredential) => {
                 const user = userCredential.user;
                 // 'db'はfirebase-config.jsで定義されたグローバル変数を使用
-                return db.collection("users").doc(user.uid).set({
+                const initialUserData = {
                     username: username,
                     level: 1,
                     xp: 0,
@@ -36,64 +31,35 @@ if (signupForm) {
                         perfectRandomSelect: false,
                         perfectRandomInput: false,
                         perfectCounts: {
-                            EASY: 0,
-                            NORMAL: 0,
-                            HARD: 0,
-                            SUPER: 0,
-                            RANDOM: 0
+                            EASY: { "select": 0, "input": 0 },
+                            NORMAL: { "select": 0, "input": 0 },
+                            HARD: { "select": 0, "input": 0 },
+                            SUPER: { "select": 0, "input": 0 },
+                            RANDOM: { "select": 0, "input": 0 }
                         }
                     },
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
+                };
+                
+                // Firestoreへの書き込み処理を返す
+                return db.collection("users").doc(user.uid).set(initialUserData);
             })
             .then(() => {
-                alert('登録が完了しました！トップページに戻ります。');
+                // このthenブロックはFirestoreへの書き込みが成功した後に実行される
+                alert('登録が完了しました！トップページに移動します。');
                 window.location.href = '/';
             })
-            .catch(showAuthError);
-    });
-}
-
-// --- ログインページのロジック ---
-const loginForm = document.getElementById('login-form');
-if (loginForm) {
-    loginForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-        
-        // 'auth'はfirebase-config.jsで定義されたグローバル変数を使用
-        auth.signInWithEmailAndPassword(email, password)
-            .then(() => {
-                alert('ログインしました！');
-                window.location.href = '/';
-            })
-            .catch(error => {
-                if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-                    alert('メールアドレスかパスワードが間違っています。');
+            .catch((error) => {
+                // エラー内容をコンソールに詳しく出力してデバッグしやすくする
+                console.error("新規登録処理中にエラーが発生しました:", error);
+                
+                // ユーザーには汎用的なエラーメッセージを表示
+                if (error.code === 'auth/email-already-in-use') {
+                    alert('このメールアドレスは既に使用されています。');
                 } else {
+                    // 汎用的なエラー表示関数を呼び出す
                     showAuthError(error);
                 }
             });
-    });
-}
-
-// --- パスワードリセットのロジック ---
-const forgotPasswordLink = document.getElementById('forgot-password-link');
-if (forgotPasswordLink) {
-    forgotPasswordLink.addEventListener('click', (e) => {
-        e.preventDefault();
-        
-        const email = prompt("パスワードをリセットしたいアカウントのメールアドレスを入力してください。");
-        
-        if (email) {
-            auth.sendPasswordResetEmail(email)
-                .then(() => {
-                    alert("パスワード再設定用のメールを送信しました。メールボックスを確認してください。");
-                })
-                .catch((error) => {
-                    showAuthError(error);
-                });
-        }
     });
 }
