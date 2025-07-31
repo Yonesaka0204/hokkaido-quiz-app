@@ -146,6 +146,7 @@ if (chatForm) {
         if (message) {
             socket.emit('send-chat-message', { roomId, message });
             chatInput.value = '';
+            chatInput.blur(); // 入力フィールドからフォーカスを外す
         }
     });
 }

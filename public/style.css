@@ -440,6 +440,9 @@ body.chat-is-open #player-status-container {
 }
 
 #chat-toggle-btn {
+    position: fixed; /* ★変更: relative から fixed へ */
+    top: 20px;       /* ★追加: 画面上からの位置 */
+    right: 20px;      /* ★追加: 画面右からの位置 */
     width: 50px;
     height: 50px;
     border-radius: 50%;
@@ -452,10 +455,9 @@ body.chat-is-open #player-status-container {
     justify-content: center;
     align-items: center;
     padding: 0;
-    margin: 0 0 0 1rem;
+    margin: 0; /* ★変更: 不要なマージンを削除 */
     flex-shrink: 0;
-    transition: background-color 0.2s;
-    position: relative;
+    transition: all 0.3s ease-in-out; /* ★変更: transformだけでなく全体に適用 */
     z-index: 1000;
 }
 #chat-toggle-btn:hover {
@@ -503,6 +505,11 @@ body.chat-is-open #chat-toggle-btn:hover {
 }
 #chat-panel #chat-form {
     margin-top: 1rem;
+}
+
+/* ★★★ このルールをファイルの下の方に追加 ★★★ */
+body.chat-is-open #chat-toggle-btn {
+    transform: translateX(-300px);
 }
 
 /* --- スマホ表示用の調整 --- */
