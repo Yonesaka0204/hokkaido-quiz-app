@@ -39,6 +39,12 @@ if(backToLobbyBtn) {
 }
 
 socket.on('new-question', (data) => {
+    // ★★★ ここから追加 ★★★
+    // 前の問題から残っている可能性のあるイベントリスナーを確実に削除
+    document.removeEventListener('click', proceedToNext);
+    document.removeEventListener('keydown', handleKeydown);
+    // ★★★ ここまで追加 ★★★
+
     hasProceeded = false;
     resultEl.innerHTML = '';
     

@@ -90,8 +90,8 @@ function startQuiz(isRanked) {
 }
 
 socket.on('quiz-start', ({ roomId }) => {
-    // クイズ開始時にシングルプレイの記録を削除
-    sessionStorage.removeItem('isSinglePlayer');
+    // // クイズ開始時にシングルプレイの記録を削除
+    // sessionStorage.removeItem('isSinglePlayer');
     window.location.href = `/room/${roomId}/quiz`;
 });
 
