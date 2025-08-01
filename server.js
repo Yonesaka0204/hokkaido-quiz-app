@@ -434,6 +434,11 @@ io.on('connection', (socket) => {
         state.answersReceived = 0;
         state.readyPlayers.clear();
         state.scores = {};
+
+        // ★★★★★ 最終修正ポイント 1/2 ★★★★★
+        // クイズが始まったばかりであることを示すフラグを設定
+        state.quizJustStarted = true;
+
         room.users.forEach(u => {
             const key = u.uid || u.name;
             state.scores[key] = 0;
@@ -747,6 +752,13 @@ function proceedToNextQuestion(roomId) {
     // ★★★ デバッグログを追加 ★★★
     console.log(`[DEBUG: proceedToNextQuestion] 関数が呼び出されました。現在の質問インデックス: ${state.currentQuestionIndex}`);
 
+    // ★★★★★ 最終修正ポイント 2/2 ★★★★★
+    // クイズ開始直後の誤作動呼び出しをブロックする
+    if (state.quizJustStarted) {
+        state.quizJustStarted = false; // フラグを解除して、次回以降は通す
+        console.log("Blocking initial erroneous proceed call.");
+        return; // ここで処理を中断
+    }
 
     if (state.isProceeding) {
         console.log(`[DEBUG: proceedToNextQuestion] 既に進行中のため、処理を中断します。`);
@@ -928,6 +940,7 @@ function resetQuizState(roomId) {
             nextQuestionTimer: null,
             answeredPlayers: new Set(),
             isProceeding: false,
+            quizJustStarted: false // ★★★ 新しいプロパティを追加 ★★★
         };
     }
 }
