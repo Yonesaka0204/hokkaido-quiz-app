@@ -230,7 +230,7 @@ const allQuizData = [
     { question: "螺湾", answer: "らわん", difficulty: "HARD", dummies: ["ねじわん", "らわ"], trivia: "足寄町にある地名。アイヌ語で「低い川」を意味し、巨大なフキ「ラワンぶき」が有名。" },
     { question: "跡永賀", answer: "あとえか", difficulty: "HARD", dummies: ["せきえいが", "あとえいが"], trivia: "中川町にある地名。アイヌ語で「鹿の足跡のある川」を意味する。" },
     { question: "鐺別", answer: "とうべつ", difficulty: "HARD", dummies: ["こじりべつ", "とべつ"], trivia: "幕別町にある地名。アイヌ語で「川尻に沼のある川」を意味する。" },
-    { question: "最栄利別", answer: "moeribetsu", difficulty: "HARD", dummies: ["さいえいりべつ", "もえわけ"], trivia: "むかわ町にある地名。アイヌ語で「流れの静かな川」を意味する「モ・イ・ペッ」が由来とされる。" },
+    { question: "最栄利別", answer: "もえりべつ", difficulty: "HARD", dummies: ["さいえいりべつ", "もえわけ"], trivia: "むかわ町にある地名。アイヌ語で「流れの静かな川」を意味する「モ・イ・ペッ」が由来とされる。" },
     { question: "雪裡", answer: "せつり", difficulty: "HARD", dummies: ["ゆきさと", "せつりない"], trivia: "鶴居村にある地名。アイヌ語で「薬草（トリカブト）の川」を意味する。" },
     { question: "紗那", answer: "しゃな", difficulty: "HARD", dummies: ["さな", "しゃな"], trivia: "北方領土・択捉島にある地名。アイヌ語で「川下の村」を意味する。" },
 
@@ -438,17 +438,10 @@ io.on('connection', (socket) => {
         io.to(roomId).emit('quiz-start', { roomId });
     });
 
-    // ★★★ ここからデバッグ用のコードに置き換え ★★★
-
-    // 1. 'player-ready' イベントリスナーを置き換え
     socket.on('player-ready', async ({ roomId, idToken, name }) => {
-        console.log(`[SERVER LOG] 'player-ready'受信。 User: ${name || 'ログインユーザー'}`); // ログ追加
         const room = rooms[roomId];
-        if (!room || !room.quizState.isActive) {
-            console.log(`[SERVER LOG] 'player-ready'受信時、部屋が存在しないかクイズが非アクティブなため処理を中断。`); // ログ追加
-            return;
-        }
-    
+        if (!room || !room.quizState.isActive) return;
+
         try {
             let userProfile;
             if (idToken) {
@@ -456,7 +449,7 @@ io.on('connection', (socket) => {
                 const uid = decodedToken.uid;
                 const userDoc = await db.collection('users').doc(uid).get();
                 if (!userDoc.exists) throw new Error('User not found in Firestore.');
-    
+
                 const userData = userDoc.data();
                 userProfile = { id: socket.id, name: userData.username, uid, isGuest: false, level: userData.level || 1, rating: userData.rating || 1500 };
             } else if (name) {
@@ -464,28 +457,28 @@ io.on('connection', (socket) => {
             } else {
                 return;
             }
-    
+
             socket.join(roomId);
-    
+
             const existingUserIndex = rooms[roomId].users.findIndex(user =>
                 user.isGuest ? user.name === userProfile.name : user.uid === userProfile.uid
             );
-    
+
             if (existingUserIndex !== -1) {
+                // 同じユーザーが再接続した場合、socket.idを更新
                 rooms[roomId].users[existingUserIndex].id = socket.id;
             } else {
+                // 新しいユーザーの場合、リストに追加
                 rooms[roomId].users.push(userProfile);
             }
             
             socket.data = { roomId, userName: userProfile.name, uid: userProfile.uid };
-    
+
             const state = room.quizState;
             state.readyPlayers.add(socket.id);
-            console.log(`[SERVER LOG] readyPlayers updated. Current size: ${state.readyPlayers.size}`); // ログ追加
-    
+
             const activePlayers = room.users.filter(u => !u.eliminated);
             if (state.readyPlayers.size >= activePlayers.length) {
-                console.log(`[SERVER LOG] 全員の準備が完了！ 最初の問題を出題します。`); // ログ追加
                 sendNextQuestion(roomId);
             }
         } catch (error) {
@@ -493,27 +486,27 @@ io.on('connection', (socket) => {
             socket.emit('join-error', { message: 'クイズへの再参加処理中にエラーが発生しました。' });
         }
     });
-    
-    
-    // 2. 'submit-answer' イベントリスナーを置き換え
+
     socket.on('submit-answer', ({ roomId, answer, questionText }) => {
-        console.log(`[SERVER LOG] 'submit-answer'受信。 Answer: ${answer}`); // ログ追加
         const room = rooms[roomId];
         if (!room || !room.quizState.isActive) return;
-    
+
         const state = room.quizState;
         const question = state.questions[state.currentQuestionIndex];
         const player = room.users.find(u => u.id === socket.id);
         if (!player || player.eliminated) return;
-    
+
+        // 【バグ4修正】既に回答済みかチェック
         const playerIdentifier = player.uid || player.name;
         if (state.answeredPlayers.has(playerIdentifier)) {
+            console.log(`[Validation] Player ${player.name} has already answered.`);
             return;
         }
         
         if (question && question.question === questionText) {
+            // 【バグ4修正】回答済みとして記録
             state.answeredPlayers.add(playerIdentifier);
-    
+
             const isCorrect = (question.answer === answer.trim());
             const key = player.uid || player.name;
             
@@ -531,46 +524,37 @@ io.on('connection', (socket) => {
                 trivia: question.trivia,
                 eliminated: player.eliminated
             });
-    
+
             io.to(roomId).emit('player-answered', { name: player.name, isCorrect, eliminated: player.eliminated });
-    
+
             state.answersReceived++;
-            console.log(`[SERVER LOG] 回答者数: ${state.answersReceived} / ${room.users.filter(u => !u.eliminated).length}`); // ログ追加
             const activePlayers = room.users.filter(u => !u.eliminated);
             if (state.answersReceived >= activePlayers.length) {
-                console.log(`[SERVER LOG] 全員が回答完了。 'all-answers-in'を送信し、7秒タイマーを開始します。`); // ログ追加
                 io.to(roomId).emit('all-answers-in');
                 state.answersReceived = 0;
-    
+
                 if (state.nextQuestionTimer) clearTimeout(state.nextQuestionTimer);
                 state.nextQuestionTimer = setTimeout(() => {
-                    console.log(`[SERVER LOG] 7秒タイマーが発動しました。`); // ログ追加
-                    proceedToNextQuestion(roomId, 'TIMER'); // 呼び出し元を引数で渡す
+                    proceedToNextQuestion(roomId);
                 }, 7000);
             }
         }
     });
     
-    // 3. 'ready-for-next-question' イベントリスナーを置き換え
     socket.on('ready-for-next-question', ({ roomId }) => {
-        console.log(`[SERVER LOG] 'ready-for-next-question'受信。`); // ログ追加
         const room = rooms[roomId];
         if (!room || !room.quizState.isActive) return;
-    
+
         const state = room.quizState;
         state.readyPlayers.add(socket.id);
         
         const activePlayers = room.users.filter(u => !u.eliminated);
-        console.log(`[SERVER LOG] 次の問題への準備完了者: ${state.readyPlayers.size} / ${activePlayers.length}`); // ログ追加
         if (state.readyPlayers.size >= activePlayers.length) {
-            console.log(`[SERVER LOG] 全員が次の問題の準備完了。`); // ログ追加
-            proceedToNextQuestion(roomId, 'CLIENT_CLICK'); // 呼び出し元を引数で渡す
+            proceedToNextQuestion(roomId);
         }
     });
 
-    // ★★★ ここまでデバッグ用のコードに置き換え ★★★
-
-
+    // ... (get-rankings, get-user-profile, send-chat-message, return-to-lobby は変更なし)
     socket.on('get-rankings', async () => {
         try {
             const levelSnapshot = await db.collection('users').orderBy('level', 'desc').orderBy('xp', 'desc').limit(100).get();
@@ -681,9 +665,11 @@ function sendNextQuestion(roomId) {
     if (!room || !room.quizState.isActive) return;
 
     const state = room.quizState;
-    // 前回提案した修正（もし適用済みならそのままでOK）
-    state.readyPlayers.clear(); 
-    
+
+    // ★★★ ここに1行追加 ★★★
+    state.readyPlayers.clear();
+
+    // 【バグ4修正】回答済みプレイヤーのセットをリセット
     state.answeredPlayers.clear();
     
     const activePlayers = room.users.filter(u => !u.eliminated);
@@ -735,30 +721,23 @@ function sendNextQuestion(roomId) {
     io.to(roomId).emit('new-question', questionDataToSend);
 }
 
-// ★★★ ここからデバッグ用のコードに置き換え ★★★
-
-// 4. proceedToNextQuestion 関数を置き換え
-function proceedToNextQuestion(roomId, source = 'UNKNOWN') { // 呼び出し元(source)を引数で受け取る
-    console.log(`[SERVER LOG] ■■■ proceedToNextQuestionが呼び出されました。 Source: ${source} ■■■`); // ログ追加
+function proceedToNextQuestion(roomId) {
     const room = rooms[roomId];
     if (!room || !room.quizState.isActive) return;
 
     const state = room.quizState;
 
-    if (state.isProceeding) {
-        console.log(`[SERVER LOG] 既に進行中のため、重複呼び出しをブロックしました。`); // ログ追加
-        return;
-    }
+    // 【バグ5修正】進行処理の重複実行を防止
+    if (state.isProceeding) return;
     state.isProceeding = true;
 
     if (state.nextQuestionTimer) {
-        console.log(`[SERVER LOG] 進行中のタイマーをクリアしました。`); // ログ追加
         clearTimeout(state.nextQuestionTimer);
         state.nextQuestionTimer = null;
     } else {
         if(state.readyPlayers.size < room.users.filter(u => !u.eliminated).length) {
-             state.isProceeding = false;
-             console.log(`[SERVER LOG] 準備完了者が足りないため、進行を中断しました。`); // ログ追加
+             // 【バグ5修正】ロックを解除して終了
+            state.isProceeding = false;
             return;
         }
     }
@@ -775,12 +754,11 @@ function proceedToNextQuestion(roomId, source = 'UNKNOWN') { // 呼び出し元(
         endQuiz(roomId);
     }
     
+    // 【バグ5修正】ロックを解除
     state.isProceeding = false;
 }
 
-// ★★★ ここまでデバッグ用のコードに置き換え ★★★
-
-
+// ... (endQuiz関数は変更なし)
 async function endQuiz(roomId) {
     const room = rooms[roomId];
     if (!room || !room.quizState.isActive) return;
@@ -875,6 +853,7 @@ async function endQuiz(roomId) {
                             xpGained = Math.floor(xpGained * (score / 10));
                         }
                         
+                        // XPとレベルの更新ロジックを修正
                         let currentLevel = data.level || 1;
                         let currentXp = (data.xp || 0) + xpGained;
                         let xpForNextLevel = Math.floor(100 * Math.pow(currentLevel, 1.5));
@@ -910,6 +889,7 @@ async function endQuiz(roomId) {
     resetQuizState(roomId);
 }
 
+// 【バグ4,5修正】 quizStateに新しいプロパティを追加
 function resetQuizState(roomId) {
     if (rooms[roomId]) {
         rooms[roomId].quizState = {
@@ -924,8 +904,8 @@ function resetQuizState(roomId) {
             answerFormat: 'multiple-choice', 
             playerCount: 0,
             nextQuestionTimer: null,
-            answeredPlayers: new Set(), 
-            isProceeding: false,
+            answeredPlayers: new Set(), // 回答済みプレイヤーを記録
+            isProceeding: false,      // 進行処理中のフラグ
         };
     }
 }
