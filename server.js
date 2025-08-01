@@ -550,19 +550,22 @@ io.on('connection', (socket) => {
             }
         }
     });
-    
-    socket.on('ready-for-next-question', ({ roomId }) => {
-        const room = rooms[roomId];
-        if (!room || !room.quizState.isActive) return;
 
-        const state = room.quizState;
-        state.readyPlayers.add(socket.id);
-        
-        const activePlayers = room.users.filter(u => !u.eliminated);
-        if (state.readyPlayers.size >= activePlayers.length) {
-            proceedToNextQuestion(roomId);
-        }
-    });
+socket.on('ready-for-next-question', ({ roomId }) => {
+    // ★★★★★ このログが原因特定の鍵です ★★★★★
+    console.log(`[DEBUG: ready-for-next-question] イベント受信！ Socket: ${socket.id}`);
+
+    const room = rooms[roomId];
+    if (!room || !room.quizState.isActive) return;
+
+    const state = room.quizState;
+    state.readyPlayers.add(socket.id);
+    
+    const activePlayers = room.users.filter(u => !u.eliminated);
+    if (state.readyPlayers.size >= activePlayers.length) {
+        proceedToNextQuestion(roomId);
+    }
+});
 
     socket.on('get-rankings', async () => {
         try {
