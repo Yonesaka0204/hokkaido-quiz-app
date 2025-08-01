@@ -338,6 +338,11 @@ app.get('/room/:roomId/quiz', (req, res) => res.sendFile(path.join(__dirname, 'p
 app.get('/room/:roomId/results', (req, res) => res.sendFile(path.join(__dirname, 'public/results.html')));
 
 io.on('connection', (socket) => {
+        // ★★★★★ ここに最終調査用のログを追加 ★★★★★
+        socket.onAny((eventName, ...args) => {
+            console.log(`[DEBUG: INCOMING_EVENT] Event: ${eventName}, Socket: ${socket.id}`);
+        });
+        
     socket.on('join-room', async ({ roomId, idToken, name }) => {
         if (rooms[roomId] && rooms[roomId].quizState.isActive) {
             socket.emit('join-error', { message: '現在クイズが進行中のため、入室できません。' });
