@@ -63,3 +63,52 @@ if (signupForm) {
             });
     });
 }
+
+// public/auth.js の末尾に追記
+
+// --- ログインページのロジック ---
+const loginForm = document.getElementById('login-form');
+if (loginForm) {
+    loginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+
+        // Firebaseの認証機能を使ってログイン
+        auth.signInWithEmailAndPassword(email, password)
+            .then((userCredential) => {
+                // ログイン成功
+                alert('ログインしました！');
+                window.location.href = '/'; // トップページにリダイレクト
+            })
+            .catch((error) => {
+                // ログイン失敗
+                console.error("ログインエラー:", error);
+                // エラーコードに応じて、より具体的なメッセージを表示
+                if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+                    alert('メールアドレスまたはパスワードが間違っています。');
+                } else {
+                    alert('ログインに失敗しました。');
+                }
+            });
+    });
+}
+
+// --- パスワードリセットのロジック ---
+const forgotPasswordLink = document.getElementById('forgot-password-link');
+if(forgotPasswordLink) {
+    forgotPasswordLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        const email = prompt('パスワードをリセットしたいメールアドレスを入力してください。');
+        if (email) {
+            auth.sendPasswordResetEmail(email)
+                .then(() => {
+                    alert('パスワードリセット用のメールを送信しました。受信トレイを確認してください。');
+                })
+                .catch((error) => {
+                    console.error("パスワードリセットエラー:", error);
+                    alert('メールの送信に失敗しました。アドレスを確認して再度お試しください。');
+                });
+        }
+    });
+}
