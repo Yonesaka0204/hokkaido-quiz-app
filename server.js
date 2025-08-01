@@ -5,7 +5,6 @@ const path = require('path');
 const admin = require('firebase-admin');
 
 try {
-    // Render環境では環境変数から、ローカルではファイルから読み込む
     const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
     if (!serviceAccountString) {
         throw new Error('Firebaseの認証情報が環境変数に設定されていません。');
@@ -26,6 +25,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
+// (クイズデータは長いため、ここでは省略します。お手元のファイルのまま変更しないでください)
 const allQuizData = [
     // EASY
     { question: "赤井川村", answer: "あかいがわむら", difficulty: "EASY", dummies: ["あかいかわむら", "せきいがわむら"], trivia: "世界でも珍しいカルデラ盆地に位置し、キロロリゾートがあることで知られる村。" },
@@ -438,52 +438,47 @@ io.on('connection', (socket) => {
         io.to(roomId).emit('quiz-start', { roomId });
     });
 
+    // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+    //
+    //      ここに追加するのを忘れていました
+    //
+    // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
     socket.on('player-ready', async ({ roomId, idToken, name }) => {
         const room = rooms[roomId];
+        // クイズがアクティブでない場合や部屋がない場合は何もしない
         if (!room || !room.quizState.isActive) return;
-
+    
         try {
-            let userProfile;
-            if (idToken) {
-                const decodedToken = await admin.auth().verifyIdToken(idToken);
-                const uid = decodedToken.uid;
-                const userDoc = await db.collection('users').doc(uid).get();
-                if (!userDoc.exists) throw new Error('User not found in Firestore.');
-
-                const userData = userDoc.data();
-                userProfile = { id: socket.id, name: userData.username, uid, isGuest: false, level: userData.level || 1, rating: userData.rating || 1500 };
-            } else if (name) {
-                userProfile = { id: socket.id, name: name, uid: null, isGuest: true, level: 1, rating: null };
-            } else {
-                return;
+            // ユーザー情報を特定
+            const userInRoom = room.users.find(u => u.id === socket.id);
+            if (!userInRoom) {
+                // quiz.htmlからの参加は、room.htmlで参加済みのはずなので、
+                // 基本的にはここに到達しないが、安全のためにチェック
+                const decodedToken = idToken ? await admin.auth().verifyIdToken(idToken) : null;
+                const uid = decodedToken ? decodedToken.uid : null;
+                const existingUser = room.users.find(u => u.uid === uid);
+                if(existingUser) {
+                    existingUser.id = socket.id;
+                } else {
+                     // 念のため、見つからない場合は処理を中断
+                    return;
+                }
             }
-
-            socket.join(roomId);
-
-            const existingUserIndex = rooms[roomId].users.findIndex(user =>
-                user.isGuest ? user.name === userProfile.name : user.uid === userProfile.uid
-            );
-
-            if (existingUserIndex !== -1) {
-                rooms[roomId].users[existingUserIndex].id = socket.id;
-            } else {
-                rooms[roomId].users.push(userProfile);
-            }
-            
-            socket.data = { roomId, userName: userProfile.name, uid: userProfile.uid };
-
+    
             const state = room.quizState;
             state.readyPlayers.add(socket.id);
-
+    
             const activePlayers = room.users.filter(u => !u.eliminated);
+            // 準備完了したプレイヤー数がアクティブなプレイヤー数以上になったらクイズ開始
             if (state.readyPlayers.size >= activePlayers.length) {
                 sendNextQuestion(roomId);
             }
         } catch (error) {
-            console.error('Player ready/re-join failed:', error);
-            socket.emit('join-error', { message: 'クイズへの再参加処理中にエラーが発生しました。' });
+            console.error('Player ready failed:', error);
+            socket.emit('join-error', { message: 'クイズの準備中にエラーが発生しました。' });
         }
     });
+
 
     socket.on('submit-answer', ({ roomId, answer, questionText }) => {
         const room = rooms[roomId];
@@ -619,7 +614,6 @@ io.on('connection', (socket) => {
         }
     });
 
-    // ★★★ ここからがバグ修正のメイン部分 ★★★
     socket.on('disconnect', () => {
         const { roomId } = socket.data;
         if (!roomId || !rooms[roomId]) return;
@@ -628,28 +622,22 @@ io.on('connection', (socket) => {
         const userInRoom = room.users.find(u => u.id === socket.id);
     
         if (userInRoom) {
-            // ユーザーリストから切断したユーザーを削除
             room.users = room.users.filter(u => u.id !== socket.id);
             io.to(roomId).emit('room-users', room.users);
     
             const state = room.quizState;
     
-            // クイズが進行中の場合のみ、追加のロジックを処理
             if (state.isActive && !userInRoom.eliminated) {
                 const remainingActivePlayers = room.users.filter(u => !u.eliminated);
     
                 if (remainingActivePlayers.length === 0) {
-                    // 残りのプレイヤーが誰もいなくなったら、クイズを終了させる
                     endQuiz(roomId);
                 } else if (state.answersReceived >= remainingActivePlayers.length) {
-                    // 切断した人が、回答を待たれていた最後のプレイヤーだった場合
-                    // 既存のタイマーがあればクリアし、タイマーを使わずに即座に次の問題へ進む
                     if (state.nextQuestionTimer) clearTimeout(state.nextQuestionTimer);
                     proceedToNextQuestion(roomId);
                 }
             }
     
-            // 部屋に誰もいなくなり、かつクイズが動いていなければ部屋を削除
             if (room.users.length === 0 && !state.isActive) {
                 console.log(`[部屋削除] room:${roomId} が空になったため、部屋の情報を削除します。`);
                 delete rooms[roomId];
@@ -663,7 +651,6 @@ function sendNextQuestion(roomId) {
     if (!room || !room.quizState.isActive) return;
 
     const state = room.quizState;
-    // 以前提案した、状態汚染を防ぐための修正も適用済みです
     state.readyPlayers.clear(); 
     state.answeredPlayers.clear();
     
