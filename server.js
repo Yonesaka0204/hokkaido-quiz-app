@@ -480,6 +480,7 @@ io.on('connection', (socket) => {
             const activePlayers = room.users.filter(u => !u.eliminated);
             if (state.readyPlayers.size >= activePlayers.length) {
                 sendNextQuestion(roomId);
+                state.readyPlayers.clear(); // ★★★ この行を追加 ★★★
             }
         } catch (error) {
             console.error('Player ready/re-join failed:', error);
