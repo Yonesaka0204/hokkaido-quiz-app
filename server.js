@@ -608,9 +608,9 @@ io.on('connection', (socket) => {
                 }
             }
 
-            if (rooms[roomId].users.length === 0) {
+            if (rooms[roomId].users.length === 0 && !rooms[roomId].quizState.isActive) {
                 console.log(`[部屋削除] room:${roomId} が空になったため、部屋の情報を削除します。`);
-                resetQuizState(roomId); // タイマーをクリアするために呼ぶ
+                resetQuizState(roomId);
                 delete rooms[roomId];
             }
         }
