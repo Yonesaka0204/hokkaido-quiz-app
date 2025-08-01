@@ -665,10 +665,6 @@ function sendNextQuestion(roomId) {
     if (!room || !room.quizState.isActive) return;
 
     const state = room.quizState;
-
-    // ★★★ ここに1行追加 ★★★
-    state.readyPlayers.clear();
-
     // 【バグ4修正】回答済みプレイヤーのセットをリセット
     state.answeredPlayers.clear();
     
