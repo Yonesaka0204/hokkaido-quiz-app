@@ -13,16 +13,21 @@ const resultEl = document.getElementById('result');
 const backToLobbyBtn = document.getElementById('back-to-lobby-btn');
 const playerStatusContainer = document.getElementById('player-status-container');
 const playerStatusList = document.getElementById('player-status-list');
-// feedbackOverlay の宣言は削除済み
 
+// ★★★ ここからデバッグ用のコードに置き換え ★★★
+
+// 1. 'connect' イベントリスナーにログを追記
 socket.on('connect', () => {
+    console.log('[CLIENT LOG] Socket connected. Preparing to send player-ready...'); // ログ追記
     auth.onAuthStateChanged((user) => {
         const guestName = sessionStorage.getItem('guestName');
         if (user) {
             user.getIdToken(true).then(idToken => {
+                console.log('[CLIENT LOG] Sending player-ready for logged-in user.'); // ログ追記
                 socket.emit('player-ready', { roomId, idToken });
             }).catch(err => { window.location.href = '/login'; });
         } else if (guestName) {
+            console.log('[CLIENT LOG] Sending player-ready for guest user.'); // ログ追記
             socket.emit('player-ready', { roomId, name: guestName });
         } else {
             window.location.href = '/';
@@ -39,11 +44,8 @@ if(backToLobbyBtn) {
 }
 
 socket.on('new-question', (data) => {
-    // ★★★ ここから追加 ★★★
-    // 前の問題から残っている可能性のあるイベントリスナーを確実に削除
     document.removeEventListener('click', proceedToNext);
     document.removeEventListener('keydown', handleKeydown);
-    // ★★★ ここまで追加 ★★★
 
     hasProceeded = false;
     resultEl.innerHTML = '';
@@ -113,11 +115,16 @@ socket.on('new-question', (data) => {
     }
 });
 
+// 2. handleSubmit 関数にログを追記
 function handleSubmit(answer, questionText) {
+    console.log('[CLIENT LOG] handleSubmit called. Sending submit-answer.'); // ログ追記
     if (!answer || !answer.trim() || isEliminated) return;
     socket.emit('submit-answer', { roomId, answer, questionText });
     Array.from(optionsContainer.children).forEach(child => child.disabled = true);
 }
+
+// ★★★ ここまでデバッグ用のコードに置き換え ★★★
+
 
 socket.on('player-answered', ({ name, isCorrect, eliminated }) => {
     const playerLi = document.getElementById('status-' + name);
