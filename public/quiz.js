@@ -5,6 +5,7 @@ const socket = io();
 
 let hasProceeded = false;
 let isEliminated = false;
+let canProceed = false; // ★★★ 進行許可フラグを追加 ★★★
 
 const progressEl = document.getElementById('progress');
 const questionEl = document.getElementById('question');
@@ -13,7 +14,6 @@ const resultEl = document.getElementById('result');
 const backToLobbyBtn = document.getElementById('back-to-lobby-btn');
 const playerStatusContainer = document.getElementById('player-status-container');
 const playerStatusList = document.getElementById('player-status-list');
-// feedbackOverlay の宣言は削除済み
 
 socket.on('connect', () => {
     auth.onAuthStateChanged((user) => {
@@ -39,13 +39,11 @@ if(backToLobbyBtn) {
 }
 
 socket.on('new-question', (data) => {
-    // ★★★ ここから追加 ★★★
-    // 前の問題から残っている可能性のあるイベントリスナーを確実に削除
     document.removeEventListener('click', proceedToNext);
     document.removeEventListener('keydown', handleKeydown);
-    // ★★★ ここまで追加 ★★★
 
     hasProceeded = false;
+    canProceed = false; // ★★★ 問題が表示されるたびに進行不可にリセット ★★★
     resultEl.innerHTML = '';
     
     if (!isEliminated) {
@@ -195,13 +193,15 @@ socket.on('all-answers-in', () => {
         }
     }
     if (!isEliminated) {
+        canProceed = true; // ★★★ ここで初めて進行を許可する ★★★
         document.addEventListener('click', proceedToNext);
         document.addEventListener('keydown', handleKeydown);
     }
 });
 
 function proceedToNext() {
-    if (hasProceeded || isEliminated) return;
+    // ★★★ フラグのチェックを追加 ★★★
+    if (hasProceeded || isEliminated || !canProceed) return;
     hasProceeded = true;
 
     document.removeEventListener('click', proceedToNext);
@@ -266,7 +266,7 @@ if (chatForm) {
         if (message) {
             socket.emit('send-chat-message', { roomId, message });
             chatInput.value = '';
-            chatInput.blur(); // 入力フィールドからフォーカスを外す
+            chatInput.blur();
         }
     });
 }
