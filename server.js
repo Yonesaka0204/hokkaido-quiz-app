@@ -468,7 +468,7 @@ io.on('connection', (socket) => {
             state.readyPlayers.add(socket.id);
 
             const activePlayers = room.users.filter(u => !u.eliminated);
-            if (state.readyPlayers.size >= state.playerCount) {
+            if (state.readyPlayers.size >= activePlayers.length) {
                 sendNextQuestion(roomId);
             }
         } catch (error) {
