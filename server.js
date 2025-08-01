@@ -416,7 +416,6 @@ io.on('connection', (socket) => {
         }
 
         state.isActive = true;
-        state.startTime = Date.now(); // ★★ 修正箇所1 ★★
         state.isRanked = difficulty === 'ENDLESS' ? false : isRanked;
         state.difficulty = difficulty;
         state.answerFormat = answerFormat;
@@ -609,12 +608,7 @@ io.on('connection', (socket) => {
                 }
             }
 
-            // ★★ 修正箇所2 ★★
-            const gracePeriod = 5000; // 5秒の猶予期間
-            const timeSinceStart = Date.now() - (rooms[roomId].quizState.startTime || 0);
-
-            // クイズがアクティブでなく、かつ猶予期間を過ぎている場合のみ部屋を削除
-            if (rooms[roomId].users.length === 0 && !rooms[roomId].quizState.isActive && timeSinceStart > gracePeriod) {
+            if (rooms[roomId].users.length === 0 && !rooms[roomId].quizState.isActive) {
                 console.log(`[部屋削除] room:${roomId} が空になったため、部屋の情報を削除します。`);
                 resetQuizState(roomId);
                 delete rooms[roomId];
