@@ -372,6 +372,9 @@ io.on('connection', (socket) => {
             }
             rooms[roomId].users.push(userProfile);
             socket.data = { roomId, userName: userProfile.name, uid: userProfile.uid };
+            
+            console.log(`[DEBUG: join-room] Player joined: ${userProfile.name}. Current users in room:`, rooms[roomId].users.map(u => u.name));
+
             io.to(roomId).emit('room-users', rooms[roomId].users);
         } catch (error) {
             console.error('Join room failed:', error);
@@ -382,9 +385,14 @@ io.on('connection', (socket) => {
     socket.on('start-quiz', ({ roomId, difficulty, answerFormat, isRanked }) => {
         const room = rooms[roomId];
         if (!room || room.quizState.isActive) return;
+
+        const player = room.users.find(u => u.id === socket.id);
+        console.log(`[DEBUG: start-quiz] Quiz started by: ${player?.name}. Server sees these users:`, room.users.map(u => u.name));
+
         const state = room.quizState;
         state.playerCount = room.users.length;
         if (state.playerCount === 0) return;
+        
         if (isRanked && difficulty !== 'ENDLESS') {
             const loggedInUsers = room.users.filter(u => !u.isGuest);
             if (loggedInUsers.length < 2) {
@@ -428,21 +436,33 @@ io.on('connection', (socket) => {
     socket.on('player-ready', async ({ roomId, idToken, name }) => {
         const room = rooms[roomId];
         if (!room || !room.quizState.isActive) return;
-
         try {
-            const state = room.quizState;
-            const playerIdentifier = idToken ? (await admin.auth().verifyIdToken(idToken)).uid : name;
-            
-            const userInRoom = room.users.find(u => u.uid === playerIdentifier || u.name === playerIdentifier);
+            let userProfile;
+            if (idToken) {
+                const decodedToken = await admin.auth().verifyIdToken(idToken);
+                const uid = decodedToken.uid;
+                const userDoc = await db.collection('users').doc(uid).get();
+                if (!userDoc.exists) throw new Error('User not found in Firestore.');
+                const userData = userDoc.data();
+                userProfile = { id: socket.id, name: userData.username, uid, isGuest: false, level: userData.level || 1, rating: userData.rating || 1500 };
+            } else if (name) {
+                userProfile = { id: socket.id, name: name, uid: null, isGuest: true, level: 1, rating: null };
+            } else { return; }
 
-            if (userInRoom) {
-                userInRoom.id = socket.id;
-                state.readyPlayers.add(socket.id);
-                socket.data = { roomId, userName: userInRoom.name, uid: userInRoom.uid };
+            socket.join(roomId);
+            const existingUserIndex = rooms[roomId].users.findIndex(user =>
+                user.isGuest ? user.name === userProfile.name : user.uid === userProfile.uid
+            );
+            if (existingUserIndex !== -1) {
+                rooms[roomId].users[existingUserIndex].id = socket.id;
             } else {
-                console.error(`Player ${name || '(no name)'} with id ${playerIdentifier} not found in room ${roomId} upon ready.`);
-                return;
+                rooms[roomId].users.push(userProfile);
             }
+            socket.data = { roomId, userName: userProfile.name, uid: userProfile.uid };
+            const state = room.quizState;
+            state.readyPlayers.add(socket.id);
+            
+            console.log(`[DEBUG: player-ready] Received from: ${userProfile.name}. Total ready players: ${state.readyPlayers.size}`);
             
             const activePlayers = room.users.filter(u => !u.eliminated);
             if (state.readyPlayers.size >= activePlayers.length) {
@@ -463,8 +483,9 @@ io.on('connection', (socket) => {
         const player = room.users.find(u => u.id === socket.id);
         if (!player || player.eliminated) return;
         const playerIdentifier = player.uid || player.name;
-        if (state.answeredPlayers.has(playerIdentifier)) return;
-        
+        if (state.answeredPlayers.has(playerIdentifier)) {
+            return;
+        }
         if (question && question.question === questionText) {
             state.answeredPlayers.add(playerIdentifier);
             const isCorrect = (question.answer === answer.trim());
@@ -511,13 +532,18 @@ io.on('connection', (socket) => {
         try {
             const levelSnapshot = await db.collection('users').orderBy('level', 'desc').orderBy('xp', 'desc').limit(100).get();
             const levelRanking = levelSnapshot.docs.map(doc => ({ uid: doc.id, username: doc.data().username, level: doc.data().level }));
+
             const ratingSnapshot = await db.collection('users').orderBy('rating', 'desc').limit(100).get();
             const ratingRanking = ratingSnapshot.docs.map(doc => ({ uid: doc.id, username: doc.data().username, rating: doc.data().rating }));
+            
             const correctSnapshot = await db.collection('users').orderBy('totalCorrect', 'desc').limit(100).get();
             const correctRanking = correctSnapshot.docs.map(doc => ({ uid: doc.id, username: doc.data().username, totalCorrect: doc.data().totalCorrect }));
+
             const endlessSnapshot = await db.collection('users').orderBy('endlessHighScore', 'desc').limit(100).get();
             const endlessRanking = endlessSnapshot.docs.map(doc => ({ uid: doc.id, username: doc.data().username, endlessHighScore: doc.data().endlessHighScore || 0 }));
+
             socket.emit('rankings-data', { levelRanking, ratingRanking, correctRanking, endlessRanking });
+
         } catch (error) {
             console.error("ランキングデータの取得に失敗:", error);
             socket.emit('rankings-error', { message: 'ランキングデータの取得に失敗しました。' });
@@ -551,6 +577,7 @@ io.on('connection', (socket) => {
     socket.on('send-chat-message', ({ roomId, message }) => {
         const room = rooms[roomId];
         const user = room?.users.find(u => u.id === socket.id);
+
         if (user && message.trim() !== '') {
             io.to(roomId).emit('new-chat-message', {
                 sender: user.name,
@@ -570,22 +597,26 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         const { roomId } = socket.data;
         if (!roomId || !rooms[roomId]) return;
+
         const userInRoom = rooms[roomId].users.find(u => u.id === socket.id);
         if (userInRoom) {
             rooms[roomId].users = rooms[roomId].users.filter(u => u.id !== socket.id);
             io.to(roomId).emit('room-users', rooms[roomId].users);
+
             const state = rooms[roomId].quizState;
             if (state.isActive && !userInRoom.eliminated) {
                 const remainingActivePlayers = rooms[roomId].users.filter(u => !u.eliminated);
                 if (state.answersReceived >= remainingActivePlayers.length) {
                     io.to(roomId).emit('all-answers-in');
                     state.answersReceived = 0;
+
                     if (state.nextQuestionTimer) clearTimeout(state.nextQuestionTimer);
                     state.nextQuestionTimer = setTimeout(() => {
                         proceedToNextQuestion(roomId);
                     }, 7000);
                 }
             }
+
             if (rooms[roomId].users.length === 0 && !state.isActive) {
                 delete rooms[roomId];
             }
@@ -596,21 +627,27 @@ io.on('connection', (socket) => {
 function sendNextQuestion(roomId) {
     const room = rooms[roomId];
     if (!room || !room.quizState.isActive) return;
+
     const state = room.quizState;
+    
     state.answeredPlayers.clear();
+    
     const activePlayers = room.users.filter(u => !u.eliminated);
     if (activePlayers.length === 0) {
         endQuiz(roomId);
         return;
     }
+
     if (state.difficulty !== 'ENDLESS' && state.currentQuestionIndex >= state.questions.length) {
         endQuiz(roomId);
         return;
     }
+    
     if (state.difficulty === 'ENDLESS' && state.currentQuestionIndex >= state.questions.length) {
         state.questions = [...allQuizData].sort(() => 0.5 - Math.random());
         state.currentQuestionIndex = 0;
     }
+    
     const question = state.questions[state.currentQuestionIndex];
     const questionDataToSend = {
         question: { question: question.question },
@@ -619,36 +656,46 @@ function sendNextQuestion(roomId) {
         answerFormat: state.answerFormat,
         users: room.users
     };
+
     if (state.answerFormat === 'multiple-choice') {
         const correctAnswer = question.answer;
         const hardcodedDummies = question.dummies || [];
+
         let options = new Set([correctAnswer, ...hardcodedDummies]);
+
         if (options.size < 3) {
             const allPossibleDummies = allQuizData
                 .map(q => q.answer)
                 .filter(ans => !options.has(ans));
+
             while (options.size < 3 && allPossibleDummies.length > 0) {
                 const randomIndex = Math.floor(Math.random() * allPossibleDummies.length);
                 const randomDummy = allPossibleDummies.splice(randomIndex, 1)[0];
                 options.add(randomDummy);
             }
         }
+        
         const finalOptions = [...options].sort(() => 0.5 - Math.random());
         questionDataToSend.options = finalOptions;
     }
+
     io.to(roomId).emit('new-question', questionDataToSend);
 }
 
 function proceedToNextQuestion(roomId) {
     const room = rooms[roomId];
     if (!room || !room.quizState.isActive) return;
+
     const state = room.quizState;
+
     if (state.quizJustStarted) {
-        state.quizJustStarted = false;
-        return;
+        state.quizJustStarted = false; 
+        return; 
     }
+
     if (state.isProceeding) return;
     state.isProceeding = true;
+
     if (state.nextQuestionTimer) {
         clearTimeout(state.nextQuestionTimer);
         state.nextQuestionTimer = null;
@@ -658,50 +705,70 @@ function proceedToNextQuestion(roomId) {
             return;
         }
     }
+
     state.readyPlayers.clear();
     state.currentQuestionIndex++;
+    
     const activePlayers = room.users.filter(u => !u.eliminated);
     const gameShouldEnd = state.difficulty === 'ENDLESS' ? activePlayers.length < 1 : state.currentQuestionIndex >= state.questions.length;
+
     if (!gameShouldEnd) {
         sendNextQuestion(roomId);
     } else {
         endQuiz(roomId);
     }
+    
     state.isProceeding = false;
 }
+
 
 async function endQuiz(roomId) {
     const room = rooms[roomId];
     if (!room || !room.quizState.isActive) return;
+    
     const state = room.quizState;
     const finalResults = room.users
         .map(user => {
             const key = user.uid || user.name;
             return {
-                uid: user.uid, name: user.name, score: state.scores[key] || 0,
-                isGuest: user.isGuest, currentRating: user.rating
+                uid: user.uid,
+                name: user.name,
+                score: state.scores[key] || 0,
+                isGuest: user.isGuest,
+                currentRating: user.rating
             };
         })
         .sort((a, b) => b.score - a.score);
+
     const ratedPlayers = finalResults.filter(p => !p.isGuest);
     const ratingChanges = {};
+
     if (state.isRanked && ratedPlayers.length >= 2) {
         const K = 32;
+
         for (const playerA of ratedPlayers) {
             let totalRatingChange = 0;
+            
             for (const playerB of ratedPlayers) {
                 if (playerA.uid === playerB.uid) continue;
+
                 const Ra = playerA.currentRating;
                 const Rb = playerB.currentRating;
                 const Ea = 1 / (1 + Math.pow(10, (Rb - Ra) / 400));
+
                 let Sa = 0;
-                if (playerA.score > playerB.score) Sa = 1;
-                else if (playerA.score === playerB.score) Sa = 0.5;
+                if (playerA.score > playerB.score) {
+                    Sa = 1;
+                } else if (playerA.score === playerB.score) {
+                    Sa = 0.5;
+                }
+
                 totalRatingChange += K * (Sa - Ea);
             }
             ratingChanges[playerA.uid] = totalRatingChange / (ratedPlayers.length - 1);
         }
     }
+
     for (const user of room.users) {
         if (!user.isGuest) {
             const userRef = db.collection('users').doc(user.uid);
@@ -709,10 +776,12 @@ async function endQuiz(roomId) {
                 await db.runTransaction(async (transaction) => {
                     const doc = await transaction.get(userRef);
                     if (!doc.exists) return;
+                    
                     const data = doc.data();
                     let updateData = {};
                     const key = user.uid;
                     const score = state.scores[key] || 0;
+                    
                     if (state.difficulty === 'ENDLESS') {
                         if (score > (data.endlessHighScore || 0)) {
                             updateData.endlessHighScore = score;
@@ -720,32 +789,54 @@ async function endQuiz(roomId) {
                     } else if (score === 10) {
                         const difficulty = state.difficulty;
                         const formatKey = state.answerFormat === 'multiple-choice' ? 'select' : 'input';
+                        
                         updateData[`achievements.perfectCounts.${difficulty}.${formatKey}`] = admin.firestore.FieldValue.increment(1);
+
                         if (difficulty === 'RANDOM') {
-                            if (state.answerFormat === 'multiple-choice') updateData['achievements.perfectRandomSelect'] = true;
-                            else if (state.answerFormat === 'text-input') updateData['achievements.perfectRandomInput'] = true;
+                            if (state.answerFormat === 'multiple-choice') {
+                                updateData['achievements.perfectRandomSelect'] = true;
+                            } else if (state.answerFormat === 'text-input') {
+                                updateData['achievements.perfectRandomInput'] = true;
+                            }
                         }
                     }
+
                     if (score > 0) {
                         let xpGained = 10 + (score * 5);
-                        if (state.answerFormat === 'text-input') xpGained *= 3;
-                        if (state.difficulty !== 'ENDLESS' && score === 10) xpGained += 100;
-                        if (state.difficulty === 'ENDLESS') xpGained = Math.floor(xpGained * (score / 10));
+                        if (state.answerFormat === 'text-input') {
+                            xpGained *= 3;
+                        }
+
+                        if (state.difficulty !== 'ENDLESS' && score === 10) {
+                            xpGained += 100;
+                        }
+
+                        if (state.difficulty === 'ENDLESS') {
+                            xpGained = Math.floor(xpGained * (score / 10));
+                        }
+                        
                         let currentLevel = data.level || 1;
                         let currentXp = (data.xp || 0) + xpGained;
                         let xpForNextLevel = Math.floor(100 * Math.pow(currentLevel, 1.5));
+                        
                         while(currentXp >= xpForNextLevel){
                            currentXp -= xpForNextLevel;
                            currentLevel++;
                            xpForNextLevel = Math.floor(100 * Math.pow(currentLevel, 1.5));
                         }
+                        
                         updateData.xp = currentXp;
                         updateData.level = currentLevel;
-                        updateData.totalCorrect = (data.totalCorrect || 0) + score;
+
+                        const newTotalCorrect = (data.totalCorrect || 0) + score;
+                        updateData.totalCorrect = newTotalCorrect;
                     }
+
                     if (ratingChanges[user.uid] !== undefined) {
-                        updateData.rating = Math.round((data.rating || 1500) + ratingChanges[user.uid]);
+                        const newRating = Math.round((data.rating || 1500) + ratingChanges[user.uid]);
+                        updateData.rating = newRating;
                     }
+
                     if (Object.keys(updateData).length > 0) {
                         transaction.update(userRef, updateData);
                     }
@@ -753,6 +844,7 @@ async function endQuiz(roomId) {
             } catch (e) { console.error("DB更新トランザクション失敗: ", e); }
         }
     }
+    
     const displayResults = finalResults.map(r => ({name: r.name, score: r.score}));
     io.to(roomId).emit('quiz-end', { finalResults: displayResults, roomId });
     resetQuizState(roomId);
@@ -761,12 +853,20 @@ async function endQuiz(roomId) {
 function resetQuizState(roomId) {
     if (rooms[roomId]) {
         rooms[roomId].quizState = {
-            isActive: false, isRanked: false, difficulty: 'EASY',
-            questions: [], currentQuestionIndex: 0, scores: {},
-            answersReceived: 0, readyPlayers: new Set(),
-            answerFormat: 'multiple-choice', playerCount: 0,
-            nextQuestionTimer: null, answeredPlayers: new Set(),
-            isProceeding: false, quizJustStarted: false
+            isActive: false,
+            isRanked: false,
+            difficulty: 'EASY',
+            questions: [], 
+            currentQuestionIndex: 0, 
+            scores: {},
+            answersReceived: 0, 
+            readyPlayers: new Set(),
+            answerFormat: 'multiple-choice', 
+            playerCount: 0,
+            nextQuestionTimer: null,
+            answeredPlayers: new Set(),
+            isProceeding: false,
+            quizJustStarted: false
         };
     }
 }
