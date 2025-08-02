@@ -356,30 +356,25 @@ socket.on('ready-for-next-question', ({ roomId }) => {
         const { roomId, userName } = socket.data;
         if (!roomId || !rooms[roomId]) return;
 
-        const userInRoom = rooms[roomId].users.find(u => u.id === socket.id);
+        const room = rooms[roomId];
+        const state = room.quizState;
+
+        // クイズがアクティブな場合は、ページ遷移による一時的な切断とみなし、
+        // プレイヤーを即座に削除しないようにする。
+        if (state.isActive) {
+            console.log(`[Disconnect] Quiz is active. Player ${userName} is likely transitioning. Not removing from user list.`);
+            // 注意: この修正により、クイズ中に意図的に離脱したプレイヤーも結果画面までリストに残ります。
+            // より厳密に対応するにはタイムアウト処理が必要ですが、まずはバグ修正を優先します。
+            return;
+        }
+
+        // クイズ中でない場合（待機部屋など）は、従来通りプレイヤーを削除する
+        const userInRoom = room.users.find(u => u.id === socket.id);
         if (userInRoom) {
-            rooms[roomId].users = rooms[roomId].users.filter(u => u.id !== socket.id);
-            io.to(roomId).emit('room-users', rooms[roomId].users);
+            room.users = room.users.filter(u => u.id !== socket.id);
+            io.to(roomId).emit('room-users', room.users);
 
-            const state = rooms[roomId].quizState;
-            if (state.isActive && !userInRoom.eliminated) {
-                console.log(`[Game Logic] Player ${userInRoom.name} disconnected during quiz.`);
-                
-                const remainingActivePlayers = rooms[roomId].users.filter(u => !u.eliminated);
-
-                if (state.answersReceived >= remainingActivePlayers.length) {
-                    console.log(`[Game Logic] All remaining players have answered. Proceeding...`);
-                    io.to(roomId).emit('all-answers-in');
-                    state.answersReceived = 0;
-
-                    if (state.nextQuestionTimer) clearTimeout(state.nextQuestionTimer);
-                    state.nextQuestionTimer = setTimeout(() => {
-                        proceedToNextQuestion(roomId);
-                    }, 7000);
-                }
-            }
-
-            if (rooms[roomId].users.length === 0 && !state.isActive) {
+            if (room.users.length === 0 && !state.isActive) {
                 console.log(`[部屋削除] room:${roomId} が空になったため、部屋の情報を削除します。`);
                 delete rooms[roomId];
             }
