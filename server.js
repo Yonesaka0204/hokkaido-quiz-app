@@ -5,7 +5,6 @@ const path = require('path');
 const admin = require('firebase-admin');
 
 try {
-    // Render環境では環境変数から、ローカルではファイルから読み込む
     const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
     if (!serviceAccountString) {
         throw new Error('Firebaseの認証情報が環境変数に設定されていません。');
@@ -21,12 +20,10 @@ try {
 }
 
 const db = admin.firestore();
-
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// クイズデータ (変更なし)
 const allQuizData = [
     // EASY
     { question: "赤井川村", answer: "あかいがわむら", difficulty: "EASY", dummies: ["あかいかわむら", "せきいがわむら"], trivia: "世界でも珍しいカルデラ盆地に位置し、キロロリゾートがあることで知られる村。" },
@@ -325,6 +322,7 @@ const allQuizData = [
 
 const rooms = {};
 
+// Express routes
 app.use(express.static(path.join(__dirname, 'public')));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public/index.html')));
 app.get('/login', (req, res) => res.sendFile(path.join(__dirname, 'public/login.html')));
@@ -338,17 +336,11 @@ app.get('/room/:roomId/quiz', (req, res) => res.sendFile(path.join(__dirname, 'p
 app.get('/room/:roomId/results', (req, res) => res.sendFile(path.join(__dirname, 'public/results.html')));
 
 io.on('connection', (socket) => {
-        // ★★★★★ ここに最終調査用のログを追加 ★★★★★
-        socket.onAny((eventName, ...args) => {
-            console.log(`[DEBUG: INCOMING_EVENT] Event: ${eventName}, Socket: ${socket.id}`);
-        });
-        
     socket.on('join-room', async ({ roomId, idToken, name }) => {
         if (rooms[roomId] && rooms[roomId].quizState.isActive) {
             socket.emit('join-error', { message: '現在クイズが進行中のため、入室できません。' });
             return;
         }
-
         try {
             let userProfile;
             if (idToken) {
@@ -356,19 +348,16 @@ io.on('connection', (socket) => {
                 const uid = decodedToken.uid;
                 const userDoc = await db.collection('users').doc(uid).get();
                 if (!userDoc.exists) throw new Error('User not found in Firestore.');
-                
                 const userData = userDoc.data();
                 userProfile = { id: socket.id, name: userData.username, uid, isGuest: false, level: userData.level || 1, rating: userData.rating || 1500 };
             } else {
                 userProfile = { id: socket.id, name: name, uid: null, isGuest: true, level: 1, rating: null };
             }
-
             socket.join(roomId);
             if (!rooms[roomId]) {
                 rooms[roomId] = { users: [], quizState: {} };
                 resetQuizState(roomId);
             }
-            
             if (userProfile.isGuest) {
                 let finalName = userProfile.name;
                 let counter = 2;
@@ -378,16 +367,15 @@ io.on('connection', (socket) => {
                 }
                 userProfile.name = finalName;
             }
-
             if (!userProfile.isGuest) {
                 rooms[roomId].users = rooms[roomId].users.filter(user => user.uid !== userProfile.uid);
             }
-
             rooms[roomId].users.push(userProfile);
             socket.data = { roomId, userName: userProfile.name, uid: userProfile.uid };
             
-            io.to(roomId).emit('room-users', rooms[roomId].users);
+            console.log(`[DEBUG: join-room] Player joined: ${userProfile.name}. Current users in room:`, rooms[roomId].users.map(u => u.name));
 
+            io.to(roomId).emit('room-users', rooms[roomId].users);
         } catch (error) {
             console.error('Join room failed:', error);
             socket.emit('join-error', { message: '部屋への参加に失敗しました。' });
@@ -397,6 +385,9 @@ io.on('connection', (socket) => {
     socket.on('start-quiz', ({ roomId, difficulty, answerFormat, isRanked }) => {
         const room = rooms[roomId];
         if (!room || room.quizState.isActive) return;
+
+        const player = room.users.find(u => u.id === socket.id);
+        console.log(`[DEBUG: start-quiz] Quiz started by: ${player?.name}. Server sees these users:`, room.users.map(u => u.name));
 
         const state = room.quizState;
         state.playerCount = room.users.length;
@@ -409,19 +400,16 @@ io.on('connection', (socket) => {
                 return;
             }
         }
-        
         let filteredQuestions;
         if (difficulty === 'RANDOM' || difficulty === 'ENDLESS') {
             filteredQuestions = [...allQuizData];
         } else {
             filteredQuestions = allQuizData.filter(q => q.difficulty === difficulty);
         }
-
         if (difficulty !== 'ENDLESS' && filteredQuestions.length < 10) {
             socket.emit('quiz-start-failed', { message: `選択された難易度の問題が10問未満のため、クイズを開始できません。` });
             return;
         }
-
         state.isActive = true;
         state.isRanked = difficulty === 'ENDLESS' ? false : isRanked;
         state.difficulty = difficulty;
@@ -434,11 +422,7 @@ io.on('connection', (socket) => {
         state.answersReceived = 0;
         state.readyPlayers.clear();
         state.scores = {};
-
-        // ★★★★★ 最終修正ポイント 1/2 ★★★★★
-        // クイズが始まったばかりであることを示すフラグを設定
         state.quizJustStarted = true;
-
         room.users.forEach(u => {
             const key = u.uid || u.name;
             state.scores[key] = 0;
@@ -449,17 +433,9 @@ io.on('connection', (socket) => {
         io.to(roomId).emit('quiz-start', { roomId });
     });
 
-    // ★★★ ここからデバッグ版に差し替え ★★★
     socket.on('player-ready', async ({ roomId, idToken, name }) => {
-        // ★★★ デバッグログを追加 ★★★
-        console.log(`[DEBUG: player-ready] Room: ${roomId}, Socket: ${socket.id} がクイズ画面の準備完了を通知しました。`);
-    
         const room = rooms[roomId];
-        if (!room || !room.quizState.isActive) {
-            console.log(`[DEBUG: player-ready] クイズがアクティブでないため、処理を中断します。`);
-            return;
-        }
-    
+        if (!room || !room.quizState.isActive) return;
         try {
             let userProfile;
             if (idToken) {
@@ -467,69 +443,53 @@ io.on('connection', (socket) => {
                 const uid = decodedToken.uid;
                 const userDoc = await db.collection('users').doc(uid).get();
                 if (!userDoc.exists) throw new Error('User not found in Firestore.');
-    
                 const userData = userDoc.data();
                 userProfile = { id: socket.id, name: userData.username, uid, isGuest: false, level: userData.level || 1, rating: userData.rating || 1500 };
             } else if (name) {
                 userProfile = { id: socket.id, name: name, uid: null, isGuest: true, level: 1, rating: null };
-            } else {
-                return;
-            }
-    
+            } else { return; }
+
             socket.join(roomId);
-    
             const existingUserIndex = rooms[roomId].users.findIndex(user =>
                 user.isGuest ? user.name === userProfile.name : user.uid === userProfile.uid
             );
-    
             if (existingUserIndex !== -1) {
                 rooms[roomId].users[existingUserIndex].id = socket.id;
             } else {
                 rooms[roomId].users.push(userProfile);
             }
-            
             socket.data = { roomId, userName: userProfile.name, uid: userProfile.uid };
-    
             const state = room.quizState;
             state.readyPlayers.add(socket.id);
-            console.log(`[DEBUG: player-ready] readyPlayersに追加。現在のサイズ: ${state.readyPlayers.size}`);
-    
-    
+            
+            console.log(`[DEBUG: player-ready] Received from: ${userProfile.name}. Total ready players: ${state.readyPlayers.size}`);
+            
             const activePlayers = room.users.filter(u => !u.eliminated);
             if (state.readyPlayers.size >= activePlayers.length) {
-                console.log(`[DEBUG: player-ready] 全員の準備が完了。最初の質問を送信します。`);
                 sendNextQuestion(roomId);
-                state.readyPlayers.clear(); // 前回の修正箇所はそのまま
-                console.log(`[DEBUG: player-ready] 最初の質問送信後、readyPlayersをクリアしました。`);
+                state.readyPlayers.clear();
             }
         } catch (error) {
             console.error('Player ready/re-join failed:', error);
             socket.emit('join-error', { message: 'クイズへの再参加処理中にエラーが発生しました。' });
         }
     });
-    // ★★★ ここまでデバッグ版 ★★★
 
     socket.on('submit-answer', ({ roomId, answer, questionText }) => {
         const room = rooms[roomId];
         if (!room || !room.quizState.isActive) return;
-
         const state = room.quizState;
         const question = state.questions[state.currentQuestionIndex];
         const player = room.users.find(u => u.id === socket.id);
         if (!player || player.eliminated) return;
-
         const playerIdentifier = player.uid || player.name;
         if (state.answeredPlayers.has(playerIdentifier)) {
-            console.log(`[Validation] Player ${player.name} has already answered.`);
             return;
         }
-        
         if (question && question.question === questionText) {
             state.answeredPlayers.add(playerIdentifier);
-
             const isCorrect = (question.answer === answer.trim());
             const key = player.uid || player.name;
-            
             if (isCorrect) {
                 state.scores[key]++;
             } else {
@@ -537,22 +497,18 @@ io.on('connection', (socket) => {
                     player.eliminated = true;
                 }
             }
-            
             socket.emit('answer-result', { 
                 correct: isCorrect, 
                 correctAnswer: question.answer,
                 trivia: question.trivia,
                 eliminated: player.eliminated
             });
-
             io.to(roomId).emit('player-answered', { name: player.name, isCorrect, eliminated: player.eliminated });
-
             state.answersReceived++;
             const activePlayers = room.users.filter(u => !u.eliminated);
             if (state.answersReceived >= activePlayers.length) {
                 io.to(roomId).emit('all-answers-in');
                 state.answersReceived = 0;
-
                 if (state.nextQuestionTimer) clearTimeout(state.nextQuestionTimer);
                 state.nextQuestionTimer = setTimeout(() => {
                     proceedToNextQuestion(roomId);
@@ -560,22 +516,17 @@ io.on('connection', (socket) => {
             }
         }
     });
-
-socket.on('ready-for-next-question', ({ roomId }) => {
-    // ★★★★★ このログが原因特定の鍵です ★★★★★
-    console.log(`[DEBUG: ready-for-next-question] イベント受信！ Socket: ${socket.id}`);
-
-    const room = rooms[roomId];
-    if (!room || !room.quizState.isActive) return;
-
-    const state = room.quizState;
-    state.readyPlayers.add(socket.id);
     
-    const activePlayers = room.users.filter(u => !u.eliminated);
-    if (state.readyPlayers.size >= activePlayers.length) {
-        proceedToNextQuestion(roomId);
-    }
-});
+    socket.on('ready-for-next-question', ({ roomId }) => {
+        const room = rooms[roomId];
+        if (!room || !room.quizState.isActive) return;
+        const state = room.quizState;
+        state.readyPlayers.add(socket.id);
+        const activePlayers = room.users.filter(u => !u.eliminated);
+        if (state.readyPlayers.size >= activePlayers.length) {
+            proceedToNextQuestion(roomId);
+        }
+    });
 
     socket.on('get-rankings', async () => {
         try {
@@ -595,10 +546,6 @@ socket.on('ready-for-next-question', ({ roomId }) => {
 
         } catch (error) {
             console.error("ランキングデータの取得に失敗:", error);
-            const urlMatch = error.message.match(/(https?:\/\/[^\s]+)/);
-            if (urlMatch) {
-                console.error("Firestoreの複合インデックスが必要です。以下のURLにアクセスしてインデックスを作成してください:\n", urlMatch[0]);
-            }
             socket.emit('rankings-error', { message: 'ランキングデータの取得に失敗しました。' });
         }
     });
@@ -648,7 +595,7 @@ socket.on('ready-for-next-question', ({ roomId }) => {
     });
 
     socket.on('disconnect', () => {
-        const { roomId, userName } = socket.data;
+        const { roomId } = socket.data;
         if (!roomId || !rooms[roomId]) return;
 
         const userInRoom = rooms[roomId].users.find(u => u.id === socket.id);
@@ -658,12 +605,8 @@ socket.on('ready-for-next-question', ({ roomId }) => {
 
             const state = rooms[roomId].quizState;
             if (state.isActive && !userInRoom.eliminated) {
-                console.log(`[Game Logic] Player ${userInRoom.name} disconnected during quiz.`);
-                
                 const remainingActivePlayers = rooms[roomId].users.filter(u => !u.eliminated);
-
                 if (state.answersReceived >= remainingActivePlayers.length) {
-                    console.log(`[Game Logic] All remaining players have answered. Proceeding...`);
                     io.to(roomId).emit('all-answers-in');
                     state.answersReceived = 0;
 
@@ -675,22 +618,18 @@ socket.on('ready-for-next-question', ({ roomId }) => {
             }
 
             if (rooms[roomId].users.length === 0 && !state.isActive) {
-                console.log(`[部屋削除] room:${roomId} が空になったため、部屋の情報を削除します。`);
                 delete rooms[roomId];
             }
         }
     });
 });
 
-// ★★★ ここからデバッグ版に差し替え ★★★
 function sendNextQuestion(roomId) {
     const room = rooms[roomId];
     if (!room || !room.quizState.isActive) return;
 
     const state = room.quizState;
-    // ★★★ デバッグログを追加 ★★★
-    console.log(`[DEBUG: sendNextQuestion] 関数が呼び出されました。現在の質問インデックス: ${state.currentQuestionIndex}`);
-
+    
     state.answeredPlayers.clear();
     
     const activePlayers = room.users.filter(u => !u.eliminated);
@@ -740,7 +679,6 @@ function sendNextQuestion(roomId) {
         questionDataToSend.options = finalOptions;
     }
 
-    console.log(`[DEBUG: sendNextQuestion] クライアントに 'new-question' を送信します。質問インデックス: ${state.currentQuestionIndex}`);
     io.to(roomId).emit('new-question', questionDataToSend);
 }
 
@@ -749,21 +687,13 @@ function proceedToNextQuestion(roomId) {
     if (!room || !room.quizState.isActive) return;
 
     const state = room.quizState;
-    // ★★★ デバッグログを追加 ★★★
-    console.log(`[DEBUG: proceedToNextQuestion] 関数が呼び出されました。現在の質問インデックス: ${state.currentQuestionIndex}`);
 
-    // ★★★★★ 最終修正ポイント 2/2 ★★★★★
-    // クイズ開始直後の誤作動呼び出しをブロックする
     if (state.quizJustStarted) {
-        state.quizJustStarted = false; // フラグを解除して、次回以降は通す
-        console.log("Blocking initial erroneous proceed call.");
-        return; // ここで処理を中断
+        state.quizJustStarted = false; 
+        return; 
     }
 
-    if (state.isProceeding) {
-        console.log(`[DEBUG: proceedToNextQuestion] 既に進行中のため、処理を中断します。`);
-        return;
-    }
+    if (state.isProceeding) return;
     state.isProceeding = true;
 
     if (state.nextQuestionTimer) {
@@ -772,14 +702,12 @@ function proceedToNextQuestion(roomId) {
     } else {
         if(state.readyPlayers.size < room.users.filter(u => !u.eliminated).length) {
             state.isProceeding = false;
-            console.log(`[DEBUG: proceedToNextQuestion] 準備完了プレイヤーが足りないため、処理を中断します。`);
             return;
         }
     }
 
     state.readyPlayers.clear();
     state.currentQuestionIndex++;
-    console.log(`[DEBUG: proceedToNextQuestion] 質問インデックスをインクリメントしました。新しいインデックス: ${state.currentQuestionIndex}`);
     
     const activePlayers = room.users.filter(u => !u.eliminated);
     const gameShouldEnd = state.difficulty === 'ENDLESS' ? activePlayers.length < 1 : state.currentQuestionIndex >= state.questions.length;
@@ -792,7 +720,6 @@ function proceedToNextQuestion(roomId) {
     
     state.isProceeding = false;
 }
-// ★★★ ここまでデバッグ版 ★★★
 
 
 async function endQuiz(roomId) {
@@ -882,7 +809,6 @@ async function endQuiz(roomId) {
 
                         if (state.difficulty !== 'ENDLESS' && score === 10) {
                             xpGained += 100;
-                            console.log(`[XP Bonus] User ${user.uid} achieved a perfect score! +100 XP`);
                         }
 
                         if (state.difficulty === 'ENDLESS') {
@@ -940,7 +866,7 @@ function resetQuizState(roomId) {
             nextQuestionTimer: null,
             answeredPlayers: new Set(),
             isProceeding: false,
-            quizJustStarted: false // ★★★ 新しいプロパティを追加 ★★★
+            quizJustStarted: false
         };
     }
 }
