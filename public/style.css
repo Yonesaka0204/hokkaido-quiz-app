@@ -614,53 +614,62 @@ body.chat-is-open #chat-toggle-btn:hover {
     100% { transform: scale(1.5); opacity: 0; }
 }
 
-/* --- 実績タブ用のスタイル --- */
+/* --- 実績タブ用のスタイル（高品質デザイン版） --- */
 .tab-nav {
 	display: flex;
-	border-bottom: 2px solid #dee2e6;
+	border-bottom: 2px solid #e9ecef; /* 全体の薄い下線 */
 	margin-bottom: 1.5rem;
 }
 
 .tab-btn {
-	all: unset; /* ボタンのデフォルトスタイルをリセット */
+	all: unset;
 	padding: 0.75rem 1.5rem;
 	cursor: pointer;
 	font-size: 1.1rem;
-	font-weight: bold;
-	color: #495057;
+	font-weight: 700; /* 少し太字に */
+	color: #6c757d; /* 非アクティブ時の色を少し薄く */
 	position: relative;
-	transition: color 0.2s;
+	transition: color 0.3s ease;
 }
 
+/* ★★★ ホバー時のデザインを変更 ★★★ */
 .tab-btn:hover {
-	color: #007bff;
+	color: #343a40; /* ホバー時は濃いグレーに */
 }
 
+/* ★★★ アクティブ時のデザインを変更 ★★★ */
 .tab-btn.active {
-	color: #007bff;
+	color: #007bff; /* アクティブなタブの文字色を青に */
 }
 
-/* アクティブなタブの下線 */
-.tab-btn.active::after {
+/* 動く下線の設定 */
+.tab-btn::after {
 	content: '';
 	position: absolute;
-	bottom: -2px; /* ボーダーの太さ分だけ下にずらす */
+	bottom: -2px; /* 枠線の太さ分だけ下に配置 */
 	left: 0;
 	width: 100%;
 	height: 2px;
-	background-color: #007bff;
+	background-color: #007bff; /* 下線の色 */
+	transform: scaleX(0); /* 初期状態では非表示（幅を0に） */
+	transition: transform 0.3s ease-in-out; /* アニメーションを設定 */
+}
+
+/* ホバー時とアクティブ時に下線を表示 */
+.tab-btn:hover::after,
+.tab-btn.active::after {
+	transform: scaleX(1); /* 幅を100%にして表示 */
 }
 
 .tab-panel {
-	display: none; /* デフォルトで非表示 */
-	animation: fadeIn 0.5s ease-in-out; /* style.cssに既にあるアニメーションを再利用 */
+	display: none;
+	animation: fadeIn 0.5s ease-in-out;
 }
 
 .tab-panel.active {
-	display: block; /* アクティブなタブのみ表示 */
+	display: block;
 }
 
-/* タブ内の実績アイテム（既存のstatus-itemを流用） */
 .tab-panel .status-item {
-	padding: 0.5rem 0; /* 少し余白を調整 */
+	padding: 0.5rem 0;
 }
