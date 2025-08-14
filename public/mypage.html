@@ -41,6 +41,15 @@
         </div>
         <p id="loading-message">ユーザー情報を読み込んでいます...</p>
 
+        <div id="username-card" class="status-card" style="margin-top: 2rem;">
+            <h2 style="margin-top: 0; text-align: center;">ユーザー名変更</h2>
+            <form id="username-form" style="margin-top: 1rem;">
+                <input id="username-input" class="auth-input" placeholder="新しいユーザー名" required>
+                <button type="submit" id="update-username-btn" style="margin-top: 1rem;">変更する</button>
+            </form>
+            <p id="username-message" style="margin-top: 1rem; text-align: center;"></p>
+        </div>
+
         <div id="bio-card" class="status-card" style="display: none; margin-top: 2rem;">
             <h2 style="margin-top: 0; text-align: center;">自己紹介</h2>
             <p id="bio-display" style="white-space: pre-wrap; text-align: left;"></p>
@@ -90,6 +99,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
     <script src="/firebase-config.js"></script>
     <script src="/mypage.js"></script>
 </body>

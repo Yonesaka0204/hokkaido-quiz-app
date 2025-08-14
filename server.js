@@ -332,6 +332,50 @@ socket.on('ready-for-next-question', ({ roomId }) => {
         }
     });
 
+    socket.on('update-username', async ({ newUsername }) => {
+        try {
+            const { uid, roomId } = socket.data;
+            if (!uid) {
+                return socket.emit('username-update-error', { message: '認証されていません。' });
+            }
+
+            // 1. 入力値のバリデーション
+            const trimmedUsername = newUsername.trim();
+            if (!trimmedUsername || trimmedUsername.length > 10) {
+                return socket.emit('username-update-error', { message: 'ユーザー名は1～10文字で入力してください。' });
+            }
+
+            // 2. ユーザー名の重複チェック
+            const usersRef = db.collection('users');
+            const snapshot = await usersRef.where('username', '==', trimmedUsername).limit(1).get();
+            if (!snapshot.empty) {
+                // 既に同じ名前のユーザーが存在する場合
+                return socket.emit('username-update-error', { message: 'そのユーザー名は既に使用されています。' });
+            }
+
+            // 3. データベースを更新
+            const userRef = db.collection('users').doc(uid);
+            await userRef.update({ username: trimmedUsername });
+
+            // 4. クライアントに成功を通知
+            socket.emit('username-update-success', { newUsername: trimmedUsername });
+
+            // 5. もしルームにいたら、ルーム内のユーザー情報も更新して全員に通知
+            if (roomId && rooms[roomId]) {
+                const userInRoom = rooms[roomId].users.find(u => u.uid === uid);
+                if (userInRoom) {
+                    userInRoom.name = trimmedUsername;
+                    socket.data.userName = trimmedUsername; // socketのデータも更新
+                    io.to(roomId).emit('room-users', rooms[roomId].users);
+                }
+            }
+
+        } catch (error) {
+            console.error("ユーザー名の更新エラー:", error);
+            socket.emit('username-update-error', { message: 'サーバーエラーが発生しました。' });
+        }
+    });
+
     socket.on('send-chat-message', ({ roomId, message }) => {
         const room = rooms[roomId];
         const user = room?.users.find(u => u.id === socket.id);

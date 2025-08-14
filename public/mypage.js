@@ -224,4 +224,57 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // Socket.IOの接続を初期化
+    const socket = io();
+
+    // --- ユーザー名変更処理 ---
+    const usernameForm = document.getElementById('username-form');
+    const usernameInput = document.getElementById('username-input');
+    const usernameMessage = document.getElementById('username-message');
+
+    if (usernameForm) {
+        usernameForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const newUsername = usernameInput.value.trim();
+
+            if (!newUsername) {
+                usernameMessage.textContent = 'ユーザー名を入力してください。';
+                usernameMessage.style.color = 'red';
+                return;
+            }
+            if (newUsername.length > 10) {
+                usernameMessage.textContent = 'ユーザー名は10文字以内で入力してください。';
+                usernameMessage.style.color = 'red';
+                return;
+            }
+
+            // サーバーに新しいユーザー名を送信
+            socket.emit('update-username', { newUsername });
+            usernameMessage.textContent = '更新中...';
+            usernameMessage.style.color = 'gray';
+        });
+    }
+
+    // サーバーからの成功応答
+    socket.on('username-update-success', ({ newUsername }) => {
+        usernameDisplay.textContent = newUsername; // 画面上の表示を更新
+        usernameMessage.textContent = 'ユーザー名を更新しました！';
+        usernameMessage.style.color = 'green';
+        usernameInput.value = ''; // 入力欄をクリア
+
+        // ローカルストレージのユーザー情報も更新（任意）
+        const oldStatsJSON = localStorage.getItem('userStats');
+        if (oldStatsJSON) {
+            const stats = JSON.parse(oldStatsJSON);
+            stats.username = newUsername;
+            localStorage.setItem('userStats', JSON.stringify(stats));
+        }
+    });
+
+    // サーバーからのエラー応答
+    socket.on('username-update-error', ({ message }) => {
+        usernameMessage.textContent = message;
+        usernameMessage.style.color = 'red';
+    });
 });
