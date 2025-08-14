@@ -613,3 +613,54 @@ body.chat-is-open #chat-toggle-btn:hover {
     80% { transform: scale(1.5); opacity: 1; }
     100% { transform: scale(1.5); opacity: 0; }
 }
+
+/* --- 実績タブ用のスタイル --- */
+.tab-nav {
+	display: flex;
+	border-bottom: 2px solid #dee2e6;
+	margin-bottom: 1.5rem;
+}
+
+.tab-btn {
+	all: unset; /* ボタンのデフォルトスタイルをリセット */
+	padding: 0.75rem 1.5rem;
+	cursor: pointer;
+	font-size: 1.1rem;
+	font-weight: bold;
+	color: #495057;
+	position: relative;
+	transition: color 0.2s;
+}
+
+.tab-btn:hover {
+	color: #007bff;
+}
+
+.tab-btn.active {
+	color: #007bff;
+}
+
+/* アクティブなタブの下線 */
+.tab-btn.active::after {
+	content: '';
+	position: absolute;
+	bottom: -2px; /* ボーダーの太さ分だけ下にずらす */
+	left: 0;
+	width: 100%;
+	height: 2px;
+	background-color: #007bff;
+}
+
+.tab-panel {
+	display: none; /* デフォルトで非表示 */
+	animation: fadeIn 0.5s ease-in-out; /* style.cssに既にあるアニメーションを再利用 */
+}
+
+.tab-panel.active {
+	display: block; /* アクティブなタブのみ表示 */
+}
+
+/* タブ内の実績アイテム（既存のstatus-itemを流用） */
+.tab-panel .status-item {
+	padding: 0.5rem 0; /* 少し余白を調整 */
+}

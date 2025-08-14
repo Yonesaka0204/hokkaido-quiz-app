@@ -8,14 +8,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const xpDisplay = document.getElementById('xp-display');
     const xpNextDisplay = document.getElementById('xp-next-display');
     const xpProgress = document.getElementById('xp-progress');
-    const achievementsCard = document.getElementById('achievements-card');
-    const achRandomSelect = document.getElementById('ach-random-select');
-    const achRandomInput = document.getElementById('ach-random-input');
-    const countEasy = document.getElementById('count-easy');
-    const countNormal = document.getElementById('count-normal');
-    const countHard = document.getElementById('count-hard');
-    const countSuper = document.getElementById('count-super');
-    const countRandom = document.getElementById('count-random');
+	const achievementsCard = document.getElementById('achievements-card');
+	// ▼▼▼ タブ関連の要素 ▼▼▼
+	const tabNav = document.querySelector('.tab-nav');
+	const tabPanels = document.querySelectorAll('.tab-panel');
+	const generalTabPanel = document.getElementById('tab-general');
+	const perfectCountsTabPanel = document.getElementById('tab-perfect-counts');
+	// ▲▲▲ ここまで ▲▲▲
     const bioCard = document.getElementById('bio-card');
     const bioDisplay = document.getElementById('bio-display');
     const bioForm = document.getElementById('bio-form');
@@ -113,8 +112,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // --- ログイン状態の監視とメイン処理 ---
-    auth.onAuthStateChanged(user => {
+	auth.onAuthStateChanged(user => {
         if (user) {
+			// ▼▼▼ タブ切り替えロジック ▼▼▼
+			if (tabNav) {
+				tabNav.addEventListener('click', (e) => {
+					const target = e.target;
+					if (target.classList.contains('tab-btn')) {
+						const tabId = target.dataset.tab;
+
+						// すべてのタブボタンとパネルからactiveクラスを削除
+						tabNav.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+						tabPanels.forEach(panel => panel.classList.remove('active'));
+
+						// クリックされたタブと対応するパネルにactiveクラスを追加
+						target.classList.add('active');
+						const panel = document.getElementById(`tab-${tabId}`);
+						if (panel) panel.classList.add('active');
+					}
+				});
+			}
+			// ▲▲▲ ここまで ▲▲▲
             const userRef = db.collection('users').doc(user.uid);
             userRef.get().then(doc => {
                 if (doc.exists) {
@@ -131,30 +149,59 @@ document.addEventListener('DOMContentLoaded', () => {
                     bioInput.value = data.bio || "";
                     bioCard.style.display = 'block';
 
-                    if (data.achievements) {
-                        const achData = data.achievements;
-                        achRandomSelect.textContent = achData.perfectRandomSelect ? '🏆 達成済み' : '未達成';
-                        achRandomInput.textContent = achData.perfectRandomInput ? '🏆 達成済み' : '未達成';
-                        const counts = achData.perfectCounts || {};
-                        const formatCountText = (difficultyKey) => {
-                            const countData = counts[difficultyKey];
-                            if (typeof countData === 'object' && countData !== null) {
-                                const selectCount = countData.select || 0;
-                                const inputCount = countData.input || 0;
-                                return `選択 ${selectCount}回 / 入力 ${inputCount}回`;
-                            }
-                            if (typeof countData === 'number') {
-                                return `合計 ${countData}回`;
-                            }
-                            return `選択 0回 / 入力 0回`;
-                        };
-                        countEasy.textContent = formatCountText('EASY');
-                        countNormal.textContent = formatCountText('NORMAL');
-                        countHard.textContent = formatCountText('HARD');
-                        countSuper.textContent = formatCountText('SUPER');
-                        countRandom.textContent = formatCountText('RANDOM');
-                        achievementsCard.style.display = 'block';
-                    }
+					if (data.achievements) {
+						const achData = data.achievements;
+
+						// --- 「全般」タブのコンテンツを生成 ---
+						if (generalTabPanel) {
+							generalTabPanel.innerHTML = `
+								<div class="status-item">
+									<span>ランダム(選択式)で全問正解</span>
+									<span>${achData.perfectRandomSelect ? '🏆 達成済み' : '未達成'}</span>
+								</div>
+								<div class="status-item">
+									<span>ランダム(入力式)で全問正解</span>
+									<span>${achData.perfectRandomInput ? '🏆 達成済み' : '未達成'}</span>
+								</div>
+							`;
+						}
+
+						// --- 「全問正解」タブのコンテンツを生成 ---
+						if (perfectCountsTabPanel) {
+							const counts = achData.perfectCounts || {};
+							const formatCountText = (difficultyKey) => {
+								const countData = counts[difficultyKey];
+								if (typeof countData === 'object' && countData !== null) {
+									return `選択 ${countData.select || 0}回 / 入力 ${countData.input || 0}回`;
+								}
+								return `選択 0回 / 入力 0回`;
+							};
+							perfectCountsTabPanel.innerHTML = `
+								<div class="status-item">
+									<span>EASY:</span>
+									<span>${formatCountText('EASY')}</span>
+								</div>
+								<div class="status-item">
+									<span>NORMAL:</span>
+									<span>${formatCountText('NORMAL')}</span>
+								</div>
+								<div class="status-item">
+									<span>HARD:</span>
+									<span>${formatCountText('HARD')}</span>
+								</div>
+								<div class="status-item">
+									<span>SUPER:</span>
+									<span>${formatCountText('SUPER')}</span>
+								</div>
+								<div class="status-item" style="margin-bottom: 0;">
+									<span>ランダム:</span>
+									<span>${formatCountText('RANDOM')}</span>
+								</div>
+							`;
+						}
+
+						achievementsCard.style.display = 'block';
+					}
 
                     loadingMessage.style.display = 'none';
                     userStatusDiv.style.display = 'block';

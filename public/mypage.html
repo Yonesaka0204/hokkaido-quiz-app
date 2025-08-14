@@ -59,39 +59,21 @@
             </form>
         </div>
 
-        <div id="achievements-card" class="status-card" style="display: none; margin-top: 2rem;">
-            <h2 style="margin-top: 0; text-align: center;">実績</h2>
-            <div class="status-item">
-                <span>ランダム(選択式)で全問正解</span>
-                <span id="ach-random-select">未達成</span>
-            </div>
-            <div class="status-item">
-                <span>ランダム(入力式)で全問正解</span>
-                <span id="ach-random-input">未達成</span>
-            </div>
-            <hr>
-            <h3 style="text-align: center; margin-bottom: 1.5rem;">全問正解 達成回数</h3>
-            <div class="status-item">
-                <span>EASY:</span>
-                <span id="count-easy">0 回</span>
-            </div>
-            <div class="status-item">
-                <span>NORMAL:</span>
-                <span id="count-normal">0 回</span>
-            </div>
-            <div class="status-item">
-                <span>HARD:</span>
-                <span id="count-hard">0 回</span>
-            </div>
-            <div class="status-item">
-                <span>SUPER:</span>
-                <span id="count-super">0 回</span>
-            </div>
-            <div class="status-item" style="margin-bottom: 0;">
-                <span>ランダム:</span>
-                <span id="count-random">0 回</span>
-            </div>
-        </div>
+		<div id="achievements-card" class="status-card" style="display: none; margin-top: 2rem;">
+			<h2 style="margin-top: 0; text-align: center;">実績</h2>
+
+			<div class="tab-nav">
+				<button class="tab-btn active" data-tab="general">全般</button>
+				<button class="tab-btn" data-tab="perfect-counts">全問正解</button>
+			</div>
+			<div class="tab-content">
+				<div id="tab-general" class="tab-panel active">
+				</div>
+
+				<div id="tab-perfect-counts" class="tab-panel">
+				</div>
+			</div>
+		</div>
 
         <a href="/" class="secondary-btn" style="margin-top: 2rem;">トップページに戻る</a>
     </div>
