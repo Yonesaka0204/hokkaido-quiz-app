@@ -630,11 +630,14 @@ body.chat-is-open #chat-toggle-btn:hover {
 	color: #6c757d; /* 非アクティブ時の色を少し薄く */
 	position: relative;
 	transition: color 0.3s ease;
+	background-color: transparent; /* 明示的に背景色を透明に */
+	border: none; /* ボーダーも明示的に削除 */
 }
 
 /* ★★★ ホバー時のデザインを変更 ★★★ */
 .tab-btn:hover {
 	color: #343a40; /* ホバー時は濃いグレーに */
+	background-color: transparent; /* ホバー時も背景色を透明に */
 }
 
 /* ★★★ アクティブ時のデザインを変更 ★★★ */
