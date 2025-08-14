@@ -25,6 +25,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const getXpForLevelUp = (level) => Math.floor(100 * Math.pow(level, 1.5));
 
+    // 地方別の総問題数を計算する関数
+    const getTotalQuestionsByRegion = () => {
+        // quiz-data.jsonの実際のデータに基づく地方別問題数（更新済み）
+        const regionCounts = {
+            "道央": 76,
+            "道南": 55,
+            "道北": 54,
+            "道東": 79,
+            "オホーツク": 22
+        };
+        
+        return regionCounts;
+    };
+
     const animateNumber = (element, start, end, duration) => {
         let startTime = null;
         const step = (timestamp) => {
@@ -201,6 +215,80 @@ document.addEventListener('DOMContentLoaded', () => {
 						}
 
 						achievementsCard.style.display = 'block';
+					}
+
+					// コレクション表示ロジックを追加
+					if (data.collection && Object.keys(data.collection).length > 0) {
+						const collectionData = data.collection;
+						const collectionPanel = document.getElementById('tab-collection');
+						const totalQuestionsByRegion = getTotalQuestionsByRegion();
+
+						// 地方ごとにグループ化
+						const groupedByRegion = {};
+						for (const placeName in collectionData) {
+							const item = collectionData[placeName];
+							if (!groupedByRegion[item.region]) {
+								groupedByRegion[item.region] = [];
+							}
+							groupedByRegion[item.region].push({ name: placeName, trivia: item.trivia });
+						}
+
+						// 全体進捗を計算
+						const totalCollected = Object.keys(collectionData).length;
+						const totalAvailable = Object.values(totalQuestionsByRegion).reduce((sum, count) => sum + count, 0);
+						const overallProgress = Math.round((totalCollected / totalAvailable) * 100);
+
+						// HTMLを生成
+						let collectionHTML = `
+							<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1.5rem; border-radius: 10px; margin-bottom: 2rem; text-align: center;">
+								<h2 style="margin: 0 0 1rem 0; font-size: 1.5rem;">🏆 コレクション進捗</h2>
+								<div style="font-size: 2rem; font-weight: bold; margin-bottom: 0.5rem;">${totalCollected}/${totalAvailable}</div>
+								<div style="font-size: 1.2rem; margin-bottom: 1rem;">${overallProgress}% 完成</div>
+								<div style="background-color: rgba(255,255,255,0.3); border-radius: 10px; height: 12px; margin: 0 auto; max-width: 300px;">
+									<div style="background-color: white; height: 100%; border-radius: 10px; width: ${overallProgress}%; transition: width 0.5s ease;"></div>
+								</div>
+							</div>
+						`;
+						
+						const regionOrder = ["道央", "道南", "道北", "道東", "オホーツク"]; // 表示したい順序
+
+						regionOrder.forEach(region => {
+							const collectedCount = groupedByRegion[region] ? groupedByRegion[region].length : 0;
+							const totalCount = totalQuestionsByRegion[region] || 0;
+							const progressPercentage = totalCount > 0 ? Math.round((collectedCount / totalCount) * 100) : 0;
+							
+							collectionHTML += `
+								<div style="margin-bottom: 2rem;">
+									<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+										<h3 style="text-align: left; margin: 0; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">${region}</h3>
+										<span style="font-size: 0.9rem; color: #666;">${collectedCount}/${totalCount} (${progressPercentage}%)</span>
+									</div>
+									<div style="background-color: #f0f0f0; border-radius: 10px; height: 8px; margin-bottom: 1rem;">
+										<div style="background: linear-gradient(90deg, #4CAF50, #45a049); height: 100%; border-radius: 10px; width: ${progressPercentage}%; transition: width 0.3s ease;"></div>
+									</div>
+							`;
+							
+							if (groupedByRegion[region]) {
+								groupedByRegion[region].forEach(item => {
+									collectionHTML += `
+										<div style="text-align: left; margin-bottom: 1rem; padding-left: 1rem; border-left: 3px solid #4CAF50;">
+											<strong style="font-size: 1.1rem;">${item.name}</strong>
+											<p style="font-size: 0.9rem; color: #555; margin: 0.3rem 0 0 0; white-space: pre-wrap;">${item.trivia}</p>
+										</div>
+									`;
+								});
+							} else {
+								collectionHTML += `<p style="color: #999; font-style: italic; margin-left: 1rem;">まだ収集していません</p>`;
+							}
+							
+							collectionHTML += `</div>`;
+						});
+						
+						collectionPanel.innerHTML = collectionHTML;
+
+					} else {
+						// コレクションが空の場合のメッセージ
+						document.getElementById('tab-collection').innerHTML = '<p>まだコレクションした地名がありません。クイズに正解して図鑑を埋めましょう！</p>';
 					}
 
                     loadingMessage.style.display = 'none';

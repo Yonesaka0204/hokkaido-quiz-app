@@ -237,6 +237,17 @@ io.on('connection', (socket) => {
             
             if (isCorrect) {
                 state.scores[key]++;
+
+                // ログインユーザーの場合、コレクションに地名を追加する
+                if (!player.isGuest && question.region) {
+                    const userRef = db.collection('users').doc(player.uid);
+                    userRef.update({
+                        [`collection.${question.question}`]: {
+                            trivia: question.trivia,
+                            region: question.region
+                        }
+                    }).catch(err => console.error("コレクションの更新に失敗:", err));
+                }
             } else {
                 if (state.difficulty === 'ENDLESS') {
                     player.eliminated = true;

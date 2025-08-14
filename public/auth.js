@@ -27,6 +27,7 @@ if (signupForm) {
                     totalCorrect: 0,
                     endlessHighScore: 0,
                     bio: "",
+                    collection: {}, // 空のコレクションオブジェクトを追加
                     achievements: {
                         perfectRandomSelect: false,
                         perfectRandomInput: false,
