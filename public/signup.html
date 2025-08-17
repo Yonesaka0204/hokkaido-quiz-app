@@ -3,19 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>新規登録</title>
+    <title>新規登録 - 北海道地名漢字クイズ</title>
     <link rel="stylesheet" href="/style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>❄️</text></svg>">
 </head>
 <body>
     <div class="container">
-        <h1>新規登録</h1>
-        <form id="signup-form">
-            <input type="text" id="username" placeholder="ユーザー名" required class="auth-input">
-            <input type="email" id="email" placeholder="メールアドレス" required class="auth-input">
-            <input type="password" id="password" placeholder="パスワード（6文字以上）" required class="auth-input">
-            <button type="submit">登録する</button>
+        <h1>✨ 新規登録</h1>
+        <p style="color: var(--hokkaido-text-light); margin-bottom: 2rem; font-size: 1.1rem;">
+            北海道地名クイズの冒険を始めましょう！
+        </p>
+        
+        <form id="signup-form" style="background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); padding: 2rem; border-radius: 16px; border: 1px solid var(--hokkaido-border); box-shadow: 0 8px 32px var(--hokkaido-shadow);">
+            <div style="margin-bottom: 1.5rem;">
+                <label for="username" style="display: block; margin-bottom: 0.5rem; color: var(--hokkaido-text); font-weight: 600;">👤 ユーザー名</label>
+                <input type="text" id="username" placeholder="あなたのユーザー名" required class="auth-input">
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <label for="email" style="display: block; margin-bottom: 0.5rem; color: var(--hokkaido-text); font-weight: 600;">📧 メールアドレス</label>
+                <input type="email" id="email" placeholder="example@email.com" required class="auth-input">
+            </div>
+            
+            <div style="margin-bottom: 2rem;">
+                <label for="password" style="display: block; margin-bottom: 0.5rem; color: var(--hokkaido-text); font-weight: 600;">🔒 パスワード</label>
+                <input type="password" id="password" placeholder="6文字以上のパスワード" required class="auth-input">
+                <p style="font-size: 0.9rem; color: var(--hokkaido-text-light); margin: 0.5rem 0 0 0;">
+                    💡 セキュリティのため、6文字以上のパスワードを設定してください
+                </p>
+            </div>
+            
+            <button type="submit" class="auth-button" style="background: var(--gradient-secondary); width: 100%; margin-bottom: 1rem;">
+                🎉 アカウントを作成
+            </button>
         </form>
-        <p>すでにアカウントをお持ちですか？ <a href="/login">ログイン</a></p>
+        
+        <div style="margin-top: 2rem; text-align: center;">
+            <p style="color: var(--hokkaido-text-light); margin-bottom: 1rem;">
+                すでにアカウントをお持ちですか？
+            </p>
+            <a href="/login" class="auth-button" style="background: var(--gradient-primary); display: inline-block; margin-bottom: 1rem;">
+                🔑 ログイン
+            </a>
+        </div>
+        
+        <div style="margin-top: 2rem; text-align: center;">
+            <a href="/" class="secondary-btn" style="display: inline-block;">
+                ← トップページに戻る
+            </a>
+        </div>
+        
+        <!-- 登録のメリット -->
+        <div style="margin-top: 3rem; padding: 2rem; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); border-radius: 16px; border: 1px solid var(--hokkaido-border);">
+            <h3 style="margin-top: 0; color: var(--hokkaido-blue); text-align: center;">🌟 アカウント登録のメリット</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
+                <div style="text-align: center; padding: 1rem;">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">📊</div>
+                    <h4 style="margin: 0 0 0.5rem 0; color: var(--hokkaido-text);">成績記録</h4>
+                    <p style="margin: 0; color: var(--hokkaido-text-light); font-size: 0.9rem;">あなたの学習進捗が自動で記録されます</p>
+                </div>
+                <div style="text-align: center; padding: 1rem;">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">🏆</div>
+                    <h4 style="margin: 0 0 0.5rem 0; color: var(--hokkaido-text);">ランキング参加</h4>
+                    <p style="margin: 0; color: var(--hokkaido-text-light); font-size: 0.9rem;">他のプレイヤーと競い合えます</p>
+                </div>
+                <div style="text-align: center; padding: 1rem;">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">🎯</div>
+                    <h4 style="margin: 0 0 0.5rem 0; color: var(--hokkaido-text);">レベルアップ</h4>
+                    <p style="margin: 0; color: var(--hokkaido-text-light); font-size: 0.9rem;">学習に応じてレベルが上がります</p>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -23,7 +81,6 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     
     <script src="/firebase-config.js"></script>
-
     <script src="/auth.js"></script>
 </body>
 </html>
