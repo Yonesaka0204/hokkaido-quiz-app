@@ -19,7 +19,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const bioDisplay = document.getElementById('bio-display');
     const bioForm = document.getElementById('bio-form');
     const bioInput = document.getElementById('bio-input');
-    const levelUpEffect = document.getElementById('level-up-effect');
 
     // --- ヘルパー関数 ---
 
@@ -39,90 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return regionCounts;
     };
 
-    const animateNumber = (element, start, end, duration) => {
-        let startTime = null;
-        const step = (timestamp) => {
-            if (!startTime) startTime = timestamp;
-            const progress = Math.min((timestamp - startTime) / duration, 1);
-            element.textContent = Math.floor(progress * (end - start) + start);
-            if (progress < 1) {
-                window.requestAnimationFrame(step);
-            }
-        };
-        window.requestAnimationFrame(step);
-    };
 
-    // --- メインのアニメーション実行関数 ---
-    const runXpAnimation = (oldStats, newStats) => {
-        let currentLevel = oldStats.level;
-        let currentXp = oldStats.xp;
-        const newTotalXp = (getXpForLevelUp(newStats.level - 1) - getXpForLevelUp(oldStats.level)) + oldStats.xp + newStats.xp;
-
-
-        const animateNextLevelUp = () => {
-            const xpNeededForCurrentLevel = getXpForLevelUp(currentLevel);
-
-            if (newStats.level > currentLevel) {
-                const duration = 1000;
-
-                xpProgress.style.transition = `width ${duration}ms ease-out`;
-                xpProgress.style.width = '100%';
-                animateNumber(xpDisplay, currentXp, xpNeededForCurrentLevel, duration);
-                xpNextDisplay.textContent = `${xpNeededForCurrentLevel} / ${xpNeededForCurrentLevel}`;
-                xpProgress.textContent = `100%`;
-
-                setTimeout(() => {
-                    levelUpEffect.classList.remove('level-up-hidden');
-                    levelUpEffect.classList.add('show');
-                    levelDisplay.classList.add('level-up-pop');
-                    
-                    setTimeout(() => {
-                        currentLevel++;
-                        levelDisplay.textContent = currentLevel;
-                        levelUpEffect.classList.remove('show');
-                        levelDisplay.classList.remove('level-up-pop');
-                        xpProgress.style.transition = 'width 0s';
-                        xpProgress.style.width = '0%';
-                        
-                        currentXp = 0;
-                        
-                        setTimeout(animateNextLevelUp, 100);
-                    }, 1500);
-                }, duration);
-                
-            } else {
-                const xpNeededForFinalLevel = getXpForLevelUp(newStats.level);
-                const finalPercentage = (newStats.xp / xpNeededForFinalLevel) * 100;
-                const duration = 1000;
-                
-                setTimeout(() => {
-                    xpProgress.style.transition = `width ${duration}ms ease-out`;
-                    xpProgress.style.width = `${finalPercentage}%`;
-                    animateNumber(xpDisplay, currentXp, newStats.xp, duration);
-                    
-                    let startXpNext = currentXp;
-                    let startTime = null;
-                    const step = (timestamp) => {
-                        if (!startTime) startTime = timestamp;
-                        const progress = Math.min((timestamp - startTime) / duration, 1);
-                        const animatedXp = Math.floor(progress * (newStats.xp - startXpNext) + startXpNext);
-                        xpNextDisplay.textContent = `${animatedXp} / ${xpNeededForFinalLevel}`;
-                        xpProgress.textContent = `${Math.floor((animatedXp / xpNeededForFinalLevel) * 100)}%`;
-                        if (progress < 1) {
-                            window.requestAnimationFrame(step);
-                        }
-                    };
-                    window.requestAnimationFrame(step);
-
-                    setTimeout(() => {
-                        localStorage.setItem('userStats', JSON.stringify(newStatsWithUid));
-                    }, duration);
-                }, 100);
-            }
-        };
-        
-        animateNextLevelUp();
-    };
 
 
     // --- ログイン状態の監視とメイン処理 ---
@@ -303,26 +219,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     const newStatsWithUid = { ...newStats, uid: user.uid };
 
-                    if (oldStats && (oldStats.xp !== newStats.xp || oldStats.level !== newStats.level)) {
-                        levelDisplay.textContent = oldStats.level;
-                        const xpNeededForOldLevel = getXpForLevelUp(oldStats.level);
-                        const oldPercentage = (oldStats.xp / xpNeededForOldLevel) * 100;
-                        xpProgress.style.width = `${oldPercentage}%`;
-                        xpProgress.textContent = `${Math.floor(oldPercentage)}%`;
-                        xpDisplay.textContent = oldStats.xp;
-                        xpNextDisplay.textContent = `${oldStats.xp} / ${xpNeededForOldLevel}`;
-                        
-                        setTimeout(() => runXpAnimation(oldStats, newStats), 500);
-                    } else {
-                        levelDisplay.textContent = newStats.level;
-                        const xpNeededForNewLevel = getXpForLevelUp(newStats.level);
-                        const newPercentage = (newStats.xp / xpNeededForNewLevel) * 100;
-                        xpProgress.style.width = `${newPercentage}%`;
-                        xpProgress.textContent = `${Math.floor(newPercentage)}%`;
-                        xpDisplay.textContent = newStats.xp;
-                        xpNextDisplay.textContent = `${newStats.xp} / ${xpNeededForNewLevel}`;
-                        localStorage.setItem('userStats', JSON.stringify(newStatsWithUid));
-                    }
+                    // アニメーションをせず、常に最新の値を直接表示する
+                    levelDisplay.textContent = newStats.level;
+                    const xpNeededForNewLevel = getXpForLevelUp(newStats.level);
+                    const newPercentage = (newStats.xp / xpNeededForNewLevel) * 100;
+                    xpProgress.style.width = `${newPercentage}%`;
+                    xpProgress.textContent = `${Math.floor(newPercentage)}%`;
+                    xpDisplay.textContent = newStats.xp;
+                    xpNextDisplay.textContent = `${newStats.xp} / ${xpNeededForNewLevel}`;
+                    
+                    // 新しいステータスをローカルストレージに保存
+                    localStorage.setItem('userStats', JSON.stringify(newStatsWithUid));
 
                 } else {
                     loadingMessage.textContent = 'ユーザー情報が見つかりませんでした。';

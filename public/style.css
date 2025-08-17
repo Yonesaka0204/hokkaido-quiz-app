@@ -576,43 +576,7 @@ body.chat-is-open #chat-toggle-btn:hover {
   100% { transform: scale(1.0); }
 }
 
-/* レベルアップ演出用のスタイル */
-.level-container {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-}
 
-#level-display.level-up-pop {
-    animation: levelUpPop 0.5s ease-out;
-}
-
-#level-up-effect {
-    position: absolute;
-    right: 0;
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: #f39c12; /* オレンジ色 */
-    text-shadow: 0 0 5px white;
-    opacity: 0;
-    transition: opacity 0.3s ease-out;
-}
-
-#level-up-effect.show {
-    animation: levelUpPop 1.5s ease-out forwards;
-}
-
-.level-up-hidden {
-    display: none;
-}
-
-@keyframes levelUpPop {
-    0% { transform: scale(1); opacity: 0; }
-    20% { transform: scale(1.5); opacity: 1; }
-    80% { transform: scale(1.5); opacity: 1; }
-    100% { transform: scale(1.5); opacity: 0; }
-}
 
 /* --- 実績タブ用のスタイル（高品質デザイン版） --- */
 .tab-nav {
