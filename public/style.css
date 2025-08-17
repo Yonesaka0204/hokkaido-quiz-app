@@ -486,7 +486,6 @@ body.chat-is-open #player-status-container {
 }
 body.chat-is-open #chat-toggle-btn {
     background-color: #e74c3c;
-    transform: translateX(-300px);
 }
 body.chat-is-open #chat-toggle-btn:hover {
     background-color: #c0392b;
@@ -541,6 +540,11 @@ body.chat-is-open #chat-toggle-btn:hover {
     .container {
         padding: 1.5rem;
         margin-top: 120px;
+    }
+    
+    /* スマホ画面ではチャットボタンも左にスライド */
+    body.chat-is-open #chat-toggle-btn {
+        transform: translateX(-300px);
     }
 }
 
@@ -639,4 +643,10 @@ body.chat-is-open #chat-toggle-btn:hover {
 
 .tab-panel .status-item {
 	padding: 0.5rem 0;
+}
+
+/* 入力窓がフォーカスされた時、placeholderの文字を透明にする */
+input:focus::placeholder,
+textarea:focus::placeholder {
+    color: transparent;
 }
