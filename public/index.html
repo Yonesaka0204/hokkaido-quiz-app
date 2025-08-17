@@ -3,117 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>北海道地名漢字クイズ - 楽しく学ぼう！</title>
+    <title>クイズへようこそ</title>
     <link rel="stylesheet" href="/style.css">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>❄️</text></svg>">
 </head>
 <body>
     <div class="container">
         <h1>北海道地名漢字クイズ</h1>
-        <p style="color: var(--hokkaido-text-light); margin-bottom: 2rem; font-size: 1.1rem;">
-            美しい北海道の地名を楽しく覚えましょう！ 🌸
-        </p>
         
         <div id="logged-in-view" style="display: none;">
-            <div style="background: var(--gradient-primary); color: white; padding: 1.5rem; border-radius: 16px; margin-bottom: 2rem; box-shadow: 0 8px 25px var(--hokkaido-shadow);">
-                <p style="margin: 0; font-size: 1.2rem; font-weight: 600;">
-                    <span id="username-display"></span> さん、おかえりなさい！ 🎉
-                </p>
-                <p style="margin: 0.5rem 0 0 0; opacity: 0.9;">
-                    Lv. <span id="level-display">1</span> | 経験値: <span id="xp-display">0</span>
-                </p>
-            </div>
+            <p><span id="username-display"></span> (Lv. <span id="level-display">1</span>) さん、ようこそ！</p>
             
             <div id="logged-in-menu">
-                <button id="single-play-btn" class="auth-button" style="background: var(--gradient-secondary);">
-                    🎯 シングルプレイ
-                </button>
-                <button id="multi-play-btn" class="auth-button" style="background: var(--gradient-primary);">
-                    👥 マルチプレイ
-                </button>
-                <a href="/mypage" class="auth-button" style="background: var(--gradient-accent);">
-                    📊 マイページ
-                </a> 
-                <a href="/ranking" class="auth-button" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);">
-                    🏆 ランキング
-                </a>
-                <button id="logout-btn" class="secondary-btn" style="margin-top: 1rem;">
-                    🚪 ログアウト
-                </button>
+                <button id="single-play-btn" class="auth-button" style="background-color: #2ecc71;">シングルプレイ</button>
+                <button id="multi-play-btn" class="auth-button" style="background-color: #3498db;">マルチプレイ</button>
+                <a href="/mypage" class="auth-button" style="background-color: #28a745;">マイページ</a> 
+                <a href="/ranking" class="auth-button" style="background-color: #f39c12;">ランキング</a>
+                <button id="logout-btn" class="secondary-btn" style="margin-top: 1rem;">ログアウト</button>
             </div>
 
-            <form id="multiplayer-join-form" style="display: none; margin-top: 2rem; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); padding: 2rem; border-radius: 16px; border: 1px solid var(--hokkaido-border);">
-                <h3 style="margin-top: 0; color: var(--hokkaido-blue);">🏠 部屋に参加</h3>
-                <p style="color: var(--hokkaido-text-light); margin-bottom: 1.5rem;">
-                    部屋を「作成」または「参加」するための合言葉を入力してください。
-                </p>
+            <form id="multiplayer-join-form" style="display: none; margin-top: 1.5rem;">
+                <p>部屋を「作成」または「参加」するための合言葉を入力してください。</p>
                 <input id="room-id-input-multi" placeholder="例: ほっかいどうクイズ" required autocomplete="off" class="auth-input">
-                <button type="submit" style="background: var(--gradient-primary);">
-                    🚀 部屋へ移動
-                </button>
-                <a href="/" class="secondary-btn" style="margin-top: 0.5rem;">
-                    ← トップページに戻る
-                </a>
+                <button type="submit">部屋へ移動</button>
+                <a href="/" class="secondary-btn" style="margin-top: 0.5rem;">トップページに戻る</a>
             </form>
 
         </div>
         
         <div id="logged-out-view" style="display: none;">
-            <div class="auth-section" style="background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); padding: 2rem; border-radius: 16px; border: 1px solid var(--hokkaido-border); margin-bottom: 2rem;">
-                <h3 style="margin-top: 0; color: var(--hokkaido-blue);">📝 アカウント機能</h3>
-                <p style="color: var(--hokkaido-text-light); margin-bottom: 1.5rem;">
-                    アカウントにログインすると成績が記録され、ランキングに参加できます！
-                </p>
-                <a href="/login" class="auth-button" style="background: var(--gradient-primary);">
-                    🔑 ログイン
-                </a>
-                <a href="/signup" class="auth-button" style="background: var(--gradient-secondary);">
-                    ✨ 新規登録
-                </a>
-                <a href="/ranking" class="auth-button" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);">
-                    🏆 ランキング
-                </a>
+            <div class="auth-section">
+                <p>アカウントにログインすると成績が記録されます。</p>
+                <a href="/login" class="auth-button">ログイン</a>
+                <a href="/signup" class="auth-button">新規登録</a>
+                <a href="/ranking" class="auth-button" style="background-color: #f39c12;">ランキング</a>
             </div>
-            
-            <div style="text-align: center; margin: 2rem 0; color: var(--hokkaido-text-light);">
-                <span style="font-size: 1.5rem;">❄️</span>
-                <span style="margin: 0 1rem;">または</span>
-                <span style="font-size: 1.5rem;">🌸</span>
-            </div>
-            
-            <form id="join-room-form-guest" style="background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); padding: 2rem; border-radius: 16px; border: 1px solid var(--hokkaido-border);">
-                <h3 style="margin-top: 0; color: var(--hokkaido-blue);">👤 ゲスト参加</h3>
-                <p style="color: var(--hokkaido-text-light); margin-bottom: 1.5rem;">
-                    アカウントを作らずに、ゲストとして参加することもできます。
-                </p>
+            <hr style="margin: 2rem 0;">
+            <form id="join-room-form-guest">
+                <p>または、ゲストとして参加できます。</p>
                 <input id="guest-name-input" placeholder="ゲスト名" required autocomplete="off" class="auth-input">
                 <input id="room-id-input-guest" placeholder="部屋ID" required autocomplete="off" class="auth-input">
-                <button type="submit" style="background: var(--gradient-accent);">
-                    🎮 ゲストとして参加
-                </button>
+                <button type="submit">ゲストとして参加</button>
             </form>
-        </div>
-        
-        <!-- 特徴紹介セクション -->
-        <div style="margin-top: 3rem; padding: 2rem; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); border-radius: 16px; border: 1px solid var(--hokkaido-border);">
-            <h3 style="margin-top: 0; color: var(--hokkaido-blue); text-align: center;">🌟 このクイズの特徴</h3>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
-                <div style="text-align: center; padding: 1rem;">
-                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">🎯</div>
-                    <h4 style="margin: 0 0 0.5rem 0; color: var(--hokkaido-text);">段階的学習</h4>
-                    <p style="margin: 0; color: var(--hokkaido-text-light); font-size: 0.9rem;">難易度別に北海道の地名を効率的に覚えられます</p>
-                </div>
-                <div style="text-align: center; padding: 1rem;">
-                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">👥</div>
-                    <h4 style="margin: 0 0 0.5rem 0; color: var(--hokkaido-text);">マルチプレイ</h4>
-                    <p style="margin: 0; color: var(--hokkaido-text-light); font-size: 0.9rem;">友達と一緒に楽しくクイズに挑戦できます</p>
-                </div>
-                <div style="text-align: center; padding: 1rem;">
-                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">🏆</div>
-                    <h4 style="margin: 0 0 0.5rem 0; color: var(--hokkaido-text);">ランキング</h4>
-                    <p style="margin: 0; color: var(--hokkaido-text-light); font-size: 0.9rem;">成績を記録して他のプレイヤーと競い合えます</p>
-                </div>
-            </div>
         </div>
     </div>
 
