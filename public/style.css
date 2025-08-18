@@ -541,11 +541,6 @@ body.chat-is-open #chat-toggle-btn:hover {
         padding: 1.5rem;
         margin-top: 120px;
     }
-    
-    /* スマホ画面ではチャットボタンも左にスライド */
-    body.chat-is-open #chat-toggle-btn {
-        transform: translateX(-300px);
-    }
 }
 
 /* ページ読み込み時のアニメーション定義 */
@@ -649,4 +644,11 @@ body.chat-is-open #chat-toggle-btn:hover {
 input:focus::placeholder,
 textarea:focus::placeholder {
     color: transparent;
+}
+
+/* 1200px以下の画面で、チャットオープン時にボタンをスライドさせる */
+@media (max-width: 1200px) {
+    body.chat-is-open #chat-toggle-btn {
+        transform: translateX(-300px);
+    }
 }
