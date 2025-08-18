@@ -13,6 +13,13 @@
             <input type="text" id="username" placeholder="ユーザー名" required class="auth-input">
             <input type="email" id="email" placeholder="メールアドレス" required class="auth-input">
             <input type="password" id="password" placeholder="パスワード（6文字以上）" required class="auth-input">
+            <div style="margin-top: 1.5rem; font-size: 0.9rem; text-align: left;">
+                <input type="checkbox" id="privacy-consent" name="privacy-consent" required>
+                <label for="privacy-consent">
+                    <a href="/privacy-policy" target="_blank">プライバシーポリシー</a>に同意します。
+                </label>
+            </div>
+            
             <button type="submit">登録する</button>
         </form>
         <p>すでにアカウントをお持ちですか？ <a href="/login">ログイン</a></p>

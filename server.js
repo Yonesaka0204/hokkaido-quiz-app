@@ -38,6 +38,7 @@ app.get('/mypage', (req, res) => res.sendFile(path.join(__dirname, 'public/mypag
 app.get('/ranking', (req, res) => res.sendFile(path.join(__dirname, 'public/ranking.html')));
 app.get('/health', (req, res) => res.sendStatus(200));
 app.get('/user/:uid', (req, res) => res.sendFile(path.join(__dirname, 'public/user.html')));
+app.get('/privacy-policy', (req, res) => res.sendFile(path.join(__dirname, 'public/privacy-policy.html')));
 app.get('/room/:roomId', (req, res) => res.sendFile(path.join(__dirname, 'public/room.html')));
 app.get('/room/:roomId/quiz', (req, res) => res.sendFile(path.join(__dirname, 'public/quiz.html')));
 app.get('/room/:roomId/results', (req, res) => res.sendFile(path.join(__dirname, 'public/results.html')));
