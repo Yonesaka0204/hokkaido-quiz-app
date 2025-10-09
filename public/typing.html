@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>北海道地名タイピング</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/typing-style.css">
+</head>
+<body>
+    <div id="start-screen" class="container">
+        <h1>地名タイピング</h1>
+        <p>制限時間を選択して、タイピングの腕を試そう！</p>
+        <div class="time-options">
+            <button class="time-btn" data-time="60">60秒チャレンジ</button>
+            <button class="time-btn" data-time="120">120秒チャレンジ</button>
+            <button class="time-btn" data-time="180">180秒チャレンジ</button>
+        </div>
+        <a href="/" class="secondary-btn" style="margin-top: 2rem;">トップページに戻る</a>
+    </div>
+
+    <div id="game-screen" class="container" style="display: none;">
+        <div id="stats-bar">
+            <div id="timer" class="stat-item">時間: <span>--</span></div>
+            <div id="kpm" class="stat-item">KPM: <span>0</span></div>
+            <div id="accuracy" class="stat-item">正確率: <span>100%</span></div>
+        </div>
+
+        <div id="word-container">
+            <div id="kanji-display"></div>
+            <div id="hiragana-display"></div>
+            <div id="romaji-display"></div>
+        </div>
+
+        <div id="combo-display" class="combo-animation"></div>
+        <div id="score-display">SCORE: 0</div>
+    </div>
+
+    <div id="results-screen" class="container" style="display: none;">
+        <h1>結果</h1>
+        <div class="result-grid">
+            <div class="result-item">
+                <span class="result-label">最終スコア</span>
+                <span id="final-score" class="result-value">0</span>
+            </div>
+            <div class="result-item">
+                <span class="result-label">最高コンボ</span>
+                <span id="max-combo" class="result-value">0</span>
+            </div>
+            <div class="result-item">
+                <span class="result-label">平均KPM</span>
+                <span id="avg-kpm" class="result-value">0</span>
+            </div>
+            <div class="result-item">
+                <span class="result-label">正確率</span>
+                <span id="final-accuracy" class="result-value">0%</span>
+            </div>
+        </div>
+        <div id="highscore-message"></div>
+        <div class="result-actions">
+            <button id="play-again-btn">もう一度プレイ</button>
+            <a href="/" class="secondary-btn">トップページに戻る</a>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="/firebase-config.js"></script>
+    <script src="/typing.js"></script>
+</body>
+</html>

@@ -261,7 +261,6 @@ button:disabled {
     transition: width 0.6s ease;
 }
 
-/* --- 結果表示用の新しいスタイル --- */
 .result-container {
     padding: 2rem;
     margin-top: 1.5rem;
@@ -325,70 +324,56 @@ button:disabled {
     transition: color 0.3s;
 }
 
-/* 表示時のアニメーション */
 @keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(15px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
-/* --- ランキングのページネーション用スタイル (ここから変更) --- */
 .pagination-controls {
     margin-top: 1.5rem;
     display: flex;
     justify-content: center;
-    align-items: center; /* ボタンの縦位置を中央揃えに */
+    align-items: center;
     gap: 0.5rem;
     flex-wrap: wrap;
 }
 
 .pagination-btn {
-    /* 円形にするための設定 */
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    padding: 0; /* 内側の余白をリセット */
+    padding: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-
-    /* 通常時のデザイン */
     font-size: 1rem;
     font-weight: bold;
-    color: #3498db; /* 青文字 */
+    color: #3498db;
     background-color: #fff;
-    border: 2px solid #3498db; /* 青枠 */
+    border: 2px solid #3498db;
     cursor: pointer;
     transition: background-color 0.2s, color 0.2s;
 }
-
 .pagination-btn:hover {
-    background-color: #3498db; /* 青背景 */
-    color: #fff; /* 白文字 */
+    background-color: #3498db;
+    color: #fff;
 }
-
 .pagination-btn.active {
-    background-color: #3498db; /* 青背景 */
-    color: #fff; /* 白文字 */
+    background-color: #3498db;
+    color: #fff;
     cursor: default;
 }
-
-/* 「前へ」「次へ」が無効な時のスタイルを追加 */
 .pagination-btn:disabled {
     color: #ccc;
     border-color: #ccc;
     background-color: #f7f7f7;
     cursor: not-allowed;
 }
-/* --- ランキングのページネーション用スタイル (ここまで変更) --- */
+.pagination-ellipsis {
+    padding: 0.5rem 0.75rem;
+    align-self: center;
+}
 
-
-/* --- 参加者ステータス表示用のスタイル --- */
 #player-status-container {
     position: fixed;
     top: 20px;
@@ -434,16 +419,11 @@ button:disabled {
 .player-answer-status {
     font-weight: bold;
     font-size: 0.85rem;
-    color: #95a5a6; /* デフォルトカラー */
+    color: #95a5a6;
 }
-.player-answer-status.correct {
-    color: #2ecc71;
-}
-.player-answer-status.incorrect {
-    color: #e74c3c;
-}
+.player-answer-status.correct { color: #2ecc71; }
+.player-answer-status.incorrect { color: #e74c3c; }
 
-/* --- New Chat UI Styles --- */
 .container, #player-status-container {
     transition: transform 0.3s ease-in-out;
 }
@@ -481,15 +461,9 @@ body.chat-is-open #player-status-container {
     transition: all 0.3s ease-in-out;
     z-index: 1000;
 }
-#chat-toggle-btn:hover {
-    background-color: #2980b9;
-}
-body.chat-is-open #chat-toggle-btn {
-    background-color: #e74c3c;
-}
-body.chat-is-open #chat-toggle-btn:hover {
-    background-color: #c0392b;
-}
+#chat-toggle-btn:hover { background-color: #2980b9; }
+body.chat-is-open #chat-toggle-btn { background-color: #e74c3c; }
+body.chat-is-open #chat-toggle-btn:hover { background-color: #c0392b; }
 
 #chat-panel {
     position: fixed;
@@ -507,14 +481,8 @@ body.chat-is-open #chat-toggle-btn:hover {
     padding: 1rem;
     box-sizing: border-box;
 }
-#chat-panel.is-open {
-    transform: translateX(0);
-}
-#chat-panel h3 {
-    margin-top: 0;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid #eee;
-}
+#chat-panel.is-open { transform: translateX(0); }
+#chat-panel h3 { margin-top: 0; padding-bottom: 0.5rem; border-bottom: 1px solid #eee; }
 #chat-panel #chat-messages {
     flex-grow: 1;
     height: auto;
@@ -524,131 +492,132 @@ body.chat-is-open #chat-toggle-btn:hover {
     padding: 0.5rem;
     min-height: 0;
 }
-#chat-panel #chat-form {
-    margin-top: 1rem;
-}
+#chat-panel #chat-form { margin-top: 1rem; }
 
-
-/* --- スマホ表示用の調整 --- */
 @media (max-width: 600px) {
-    #player-status-container {
-        width: auto;
-        left: 10px;
-        right: 10px;
-        top: 10px;
-    }
-    .container {
-        padding: 1.5rem;
-        margin-top: 120px;
-    }
+    #player-status-container { width: auto; left: 10px; right: 10px; top: 10px; }
+    .container { padding: 1.5rem; margin-top: 120px; }
 }
 
-/* ページ読み込み時のアニメーション定義 */
 @keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-/* 問題切り替え時のアニメーション用クラス */
-.quiz-item-enter {
-    opacity: 0;
-    animation: fadeInUp 0.5s ease-out forwards;
-}
+.quiz-item-enter { opacity: 0; animation: fadeInUp 0.5s ease-out forwards; }
 .quiz-item-enter.delay-1 { animation-delay: 0.1s; }
 .quiz-item-enter.delay-2 { animation-delay: 0.2s; }
 .quiz-item-enter.delay-3 { animation-delay: 0.3s; }
 .quiz-item-enter.delay-4 { animation-delay: 0.4s; }
 
-/* 正解・不正解演出用のアニメーション */
-.verdict-pop-animation {
-    animation: verdict-pop 0.5s ease-out forwards;
-}
+.verdict-pop-animation { animation: verdict-pop 0.5s ease-out forwards; }
 @keyframes verdict-pop {
   0% { transform: scale(0.8); opacity: 0; }
   70% { transform: scale(1.1); opacity: 1; }
   100% { transform: scale(1.0); }
 }
 
-
-
-/* --- 実績タブ用のスタイル（高品質デザイン版） --- */
-.tab-nav {
-	display: flex;
-	border-bottom: 2px solid #e9ecef; /* 全体の薄い下線 */
-	margin-bottom: 1.5rem;
-}
-
+.tab-nav { display: flex; border-bottom: 2px solid #e9ecef; margin-bottom: 1.5rem; }
 .tab-btn {
-	all: unset;
-	padding: 0.75rem 1.5rem;
-	cursor: pointer;
-	font-size: 1.1rem;
-	font-weight: 700; /* 少し太字に */
-	color: #6c757d; /* 非アクティブ時の色を少し薄く */
-	position: relative;
-	transition: color 0.3s ease;
-	background-color: transparent; /* 明示的に背景色を透明に */
-	border: none; /* ボーダーも明示的に削除 */
+	all: unset; padding: 0.75rem 1.5rem; cursor: pointer;
+	font-size: 1.1rem; font-weight: 700; color: #6c757d;
+	position: relative; transition: color 0.3s ease;
+	background-color: transparent; border: none;
 }
-
-/* ★★★ ホバー時のデザインを変更 ★★★ */
-.tab-btn:hover {
-	color: #343a40; /* ホバー時は濃いグレーに */
-	background-color: transparent; /* ホバー時も背景色を透明に */
-}
-
-/* ★★★ アクティブ時のデザインを変更 ★★★ */
-.tab-btn.active {
-	color: #007bff; /* アクティブなタブの文字色を青に */
-}
-
-/* 動く下線の設定 */
+.tab-btn:hover { color: #343a40; background-color: transparent; }
+.tab-btn.active { color: #007bff; }
 .tab-btn::after {
-	content: '';
-	position: absolute;
-	bottom: -2px; /* 枠線の太さ分だけ下に配置 */
-	left: 0;
-	width: 100%;
-	height: 2px;
-	background-color: #007bff; /* 下線の色 */
-	transform: scaleX(0); /* 初期状態では非表示（幅を0に） */
-	transition: transform 0.3s ease-in-out; /* アニメーションを設定 */
+	content: ''; position: absolute; bottom: -2px; left: 0;
+	width: 100%; height: 2px; background-color: #007bff;
+	transform: scaleX(0); transition: transform 0.3s ease-in-out;
 }
+.tab-btn:hover::after, .tab-btn.active::after { transform: scaleX(1); }
+.tab-panel { display: none; animation: fadeIn 0.5s ease-in-out; }
+.tab-panel.active { display: block; }
+.tab-panel .status-item { padding: 0.5rem 0; }
 
-/* ホバー時とアクティブ時に下線を表示 */
-.tab-btn:hover::after,
-.tab-btn.active::after {
-	transform: scaleX(1); /* 幅を100%にして表示 */
-}
+input:focus::placeholder, textarea:focus::placeholder { color: transparent; }
 
-.tab-panel {
-	display: none;
-	animation: fadeIn 0.5s ease-in-out;
-}
-
-.tab-panel.active {
-	display: block;
-}
-
-.tab-panel .status-item {
-	padding: 0.5rem 0;
-}
-
-/* 入力窓がフォーカスされた時、placeholderの文字を透明にする */
-input:focus::placeholder,
-textarea:focus::placeholder {
-    color: transparent;
-}
-
-/* 1200px以下の画面で、チャットオープン時にボタンをスライドさせる */
 @media (max-width: 1200px) {
-    body.chat-is-open #chat-toggle-btn {
-        transform: translateX(-300px);
-    }
+    body.chat-is-open #chat-toggle-btn { transform: translateX(-300px); }
 }
+
+.ranking-container {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    width: 100%;
+    max-width: 1400px;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+}
+.ranking-box {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    width: 30%;
+    min-width: 320px;
+    display: flex;
+    flex-direction: column;
+}
+.ranking-box h2 {
+    margin-top: 0;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 0.5rem;
+}
+.ranking-list {
+    list-style-type: none;
+    padding: 0;
+    flex-grow: 1;
+}
+.ranking-list li {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem 0.5rem;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 1.1rem;
+    align-items: center;
+}
+.ranking-list li:nth-child(1) .rank-number { color: #d4af37; }
+.ranking-list li:nth-child(2) .rank-number { color: #c0c0c0; }
+.ranking-list li:nth-child(3) .rank-number { color: #cd7f32; }
+
+.rank-number {
+    margin-right: 1rem;
+    font-weight: bold;
+    width: 30px;
+}
+.rank-name {
+    flex-grow: 1;
+    text-align: left;
+    text-decoration: none;
+    color: #333;
+    font-weight: 500;
+}
+.rank-name:hover {
+    text-decoration: underline;
+}
+.rank-stat {
+    font-weight: bold;
+    color: #007bff;
+}
+
+.ranking-box.typing-ranking h2 {
+    border-bottom-color: #9b59b6;
+}
+.ranking-box.typing-ranking .rank-stat {
+    color: #9b59b6;
+}
+
+/* ▼▼▼ ここから追加 ▼▼▼ */
+.menu-row {
+    display: flex;
+    gap: 1rem; /* ボタン間のスペース */
+    margin-top: 1.5rem;
+}
+.auth-button.half-width {
+    width: 100%; /* flexの子要素として幅を均等に分けるため */
+    margin-top: 0; /* 親要素のmarginを適用するためリセット */
+}
+/* ▲▲▲ ここまで ▲▲▲ */

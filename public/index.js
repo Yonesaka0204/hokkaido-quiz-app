@@ -15,7 +15,6 @@ const multiPlayBtn = document.getElementById('multi-play-btn');
 // マルチプレイ用フォームの要素
 const multiplayerJoinForm = document.getElementById('multiplayer-join-form');
 const roomIdInputMulti = document.getElementById('room-id-input-multi');
-// ★変更点★ backToMenuBtnに関する記述を削除
 
 // ゲスト用フォームの要素
 const joinRoomFormGuest = document.getElementById('join-room-form-guest');
@@ -51,12 +50,8 @@ logoutBtn.addEventListener('click', () => {
 
 // シングルプレイボタン
 singlePlayBtn.addEventListener('click', () => {
-    // ランダムなルームIDを生成 (例: "quiz" + 8桁のランダムな英数字)
     const roomId = 'quiz' + Math.random().toString(36).substring(2, 10);
-    
-    // シングルプレイであることをセッションストレージに記録
     sessionStorage.setItem('isSinglePlayer', 'true');
-    
     window.location.href = `/room/${roomId}`;
 });
 
@@ -66,14 +61,11 @@ multiPlayBtn.addEventListener('click', () => {
     multiplayerJoinForm.style.display = 'block';
 });
 
-// ★変更点★ backToMenuBtnのイベントリスナーを削除
-
 // マルチプレイフォームの送信
 multiplayerJoinForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const roomId = roomIdInputMulti.value.trim();
     if (roomId) {
-        // シングルプレイの記録を削除
         sessionStorage.removeItem('isSinglePlayer');
         window.location.href = `/room/${roomId}`;
     }
@@ -86,8 +78,15 @@ joinRoomFormGuest.addEventListener('submit', (e) => {
     const roomId = document.getElementById('room-id-input-guest').value.trim();
     if (roomId && guestName) {
         sessionStorage.setItem('guestName', guestName);
-        // シングルプレイの記録を削除
         sessionStorage.removeItem('isSinglePlayer');
         window.location.href = `/room/${roomId}`;
     }
 });
+
+// --- 地名タイピングモードへの遷移 ---
+const typingGameBtn = document.getElementById('typing-game-btn');
+if (typingGameBtn) {
+    typingGameBtn.addEventListener('click', () => {
+        window.location.href = '/typing';
+    });
+}
