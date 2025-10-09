@@ -1,4 +1,4 @@
-// public/typing.js (タイマー修正版)
+// public/typing.js (バーチャルキーボード対応・全文)
 
 // --- DOM要素の取得 ---
 const startScreen = document.getElementById('start-screen');
@@ -15,6 +15,7 @@ const romajiDisplay = document.getElementById('romaji-display');
 const scoreDisplay = document.getElementById('score-display');
 const comboDisplay = document.getElementById('combo-display');
 const wordContainer = document.getElementById('word-container');
+const virtualKeyboard = document.getElementById('virtual-keyboard'); // キーボード要素を取得
 
 const finalScoreDisplay = document.getElementById('final-score');
 const maxComboDisplay = document.getElementById('max-combo');
@@ -41,7 +42,7 @@ let allQuizData = [];
 let currentGameTime = 0;
 let timeLimit = 0;
 let timerInterval = null;
-let isTimerActive = false; // ▼▼▼ タイマーが作動中かどうかの状態を追加 ▼▼▼
+let isTimerActive = false;
 let currentQuestion = null;
 let remainingHiragana = '';
 let pendingRomajiOptions = [];
@@ -215,10 +216,10 @@ function updateStats() {
 }
 
 function handleKeyPress(e) {
-    // ▼▼▼ 修正点：タイマーを開始する処理を追加 ▼▼▼
+    if(e.preventDefault) e.preventDefault();
+    
     if (!isTimerActive) {
         isTimerActive = true;
-        // 最初のキー入力時にタイマーを開始
         timerInterval = setInterval(() => {
             currentGameTime--;
             timerDisplay.textContent = currentGameTime;
@@ -229,9 +230,7 @@ function handleKeyPress(e) {
             }
         }, 1000);
     }
-    // ▲▲▲ ここまで ▲▲▲
 
-    e.preventDefault();
     const key = e.key.toLowerCase();
     if (!"abcdefghijklmnopqrstuvwxyz'-".includes(key)) return;
 
@@ -291,6 +290,7 @@ function returnToStartScreen() {
     clearInterval(timerInterval);
     document.removeEventListener('keydown', handleKeyPress);
     document.removeEventListener('keydown', handleEscapeKey);
+    virtualKeyboard.classList.remove('visible');
     gameScreen.style.display = 'none';
     resultsScreen.style.display = 'none';
     startScreen.style.display = 'block';
@@ -304,28 +304,28 @@ function startGame(time) {
     maxCombo = 0;
     totalTyped = 0;
     correctTyped = 0;
-    isTimerActive = false; // ▼▼▼ 修正点：タイマー状態をリセット ▼▼▼
+    isTimerActive = false;
     scoreDisplay.textContent = 'SCORE: 0';
     comboDisplay.textContent = '';
 
     startScreen.style.display = 'none';
     resultsScreen.style.display = 'none';
     gameScreen.style.display = 'block';
+    virtualKeyboard.classList.add('visible');
 
     chooseNewQuestion();
     updateStats();
-    timerDisplay.textContent = currentGameTime; // ▼▼▼ 修正点：タイマーの初期値を表示 ▼▼▼
+    timerDisplay.textContent = currentGameTime;
     
     document.addEventListener('keydown', handleKeyPress);
     document.addEventListener('keydown', handleEscapeKey);
-
-    // ▼▼▼ 修正点：ここにあったタイマー開始処理を handleKeyPress に移動 ▼▼▼
 }
 
 function endGame() {
     clearInterval(timerInterval);
     document.removeEventListener('keydown', handleKeyPress);
     document.removeEventListener('keydown', handleEscapeKey);
+    virtualKeyboard.classList.remove('visible');
     
     const finalScore = score;
     const finalKpm = timeLimit > 0 ? (correctTyped / timeLimit) * 60 : 0;
@@ -363,6 +363,17 @@ timeButtons.forEach(button => {
 playAgainBtn.addEventListener('click', () => {
     resultsScreen.style.display = 'none';
     startScreen.style.display = 'block';
+});
+
+virtualKeyboard.addEventListener('click', (e) => {
+    if (e.target.classList.contains('key')) {
+        const key = e.target.dataset.key;
+        const fakeEvent = {
+            key: key,
+            preventDefault: () => {}
+        };
+        handleKeyPress(fakeEvent);
+    }
 });
 
 // --- Socket.IO & Firebase ---

@@ -67,7 +67,6 @@ body {
     animation: fadeIn 0.3s ease 0.1s;
 }
 
-/* ▼▼▼ ここからローマ字表示のスタイル ▼▼▼ */
 #romaji-display {
     font-size: 2.2rem;
     font-family: 'Courier New', Courier, monospace;
@@ -87,8 +86,6 @@ body {
 #romaji-display span.incorrect {
     color: #e74c3c; /* ミスした時の色 */
 }
-/* ▲▲▲ ここまで ▲▲▲ */
-
 
 #score-display {
     font-size: 2rem;
@@ -157,4 +154,62 @@ body {
     color: #e67e22;
     margin-top: 1.5rem;
     animation: fadeIn 1s ease-in-out;
+}
+
+/* --- バーチャルキーボード --- */
+#virtual-keyboard {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 5px;
+    background-color: #d1d5db;
+    display: none; /* デフォルトは非表示 */
+    flex-direction: column;
+    gap: 5px;
+    z-index: 100;
+    touch-action: manipulation; /* ダブルタップによるズームを防止 */
+}
+
+/* 画面幅が768px以下の時だけ表示 */
+@media (max-width: 768px) {
+    #virtual-keyboard.visible {
+        display: flex;
+    }
+    /* キーボードが表示される分、ゲーム画面の下に余白を作る */
+    body {
+        padding-bottom: 160px;
+    }
+}
+
+.keyboard-row {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+}
+
+.key {
+    height: 45px;
+    border: none;
+    border-radius: 5px;
+    background-color: #ffffff;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #333;
+    width: 8vw; /* 画面幅に応じた相対的な幅を指定 */
+    max-width: 40px; /* PCなど画面が広い場合でもキーが大きくなりすぎないように */
+    padding: 0;
+    margin: 0 1px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 2px 2px rgba(0,0,0,0.2);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent; /* タップ時のハイライトを消す */
+}
+
+.key:active {
+    background-color: #e2e8f0;
+    transform: translateY(1px);
+    box-shadow: 0 1px 1px rgba(0,0,0,0.2);
 }
