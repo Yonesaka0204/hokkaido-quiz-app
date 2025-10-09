@@ -346,20 +346,51 @@ io.on('connection', (socket) => {
         try {
             const decodedToken = await admin.auth().verifyIdToken(idToken);
             const uid = decodedToken.uid;
+
             if (!uid || ![60, 120, 180].includes(timeMode)) return;
+
             const userRef = db.collection('users').doc(uid);
-            const doc = await userRef.get();
-            if (!doc.exists) return;
-            const data = doc.data();
-            const currentHighscore = (data.typingScores && data.typingScores[timeMode]) || 0;
+            
+            const xpGained = 20 + Math.floor(score / 200);
             let isNewHighscore = false;
-            if (score > currentHighscore) {
-                isNewHighscore = true;
-                await userRef.update({ [`typingScores.${timeMode}`]: score });
-            }
-            socket.emit('typing-score-saved', { isNewHighscore });
+
+            await db.runTransaction(async (transaction) => {
+                const doc = await transaction.get(userRef);
+                if (!doc.exists) return;
+                
+                const data = doc.data();
+                
+                const currentHighscore = (data.typingScores && data.typingScores[timeMode]) || 0;
+                if (score > currentHighscore) {
+                    isNewHighscore = true;
+                }
+
+                let currentLevel = data.level || 1;
+                let currentXp = (data.xp || 0) + xpGained;
+                let xpForNextLevel = Math.floor(100 * Math.pow(currentLevel, 1.5));
+                
+                while(currentXp >= xpForNextLevel){
+                   currentXp -= xpForNextLevel;
+                   currentLevel++;
+                   xpForNextLevel = Math.floor(100 * Math.pow(currentLevel, 1.5));
+                }
+                
+                const updateData = {
+                    xp: currentXp,
+                    level: currentLevel
+                };
+
+                if (isNewHighscore) {
+                    updateData[`typingScores.${timeMode}`] = score;
+                }
+
+                transaction.update(userRef, updateData);
+            });
+
+            socket.emit('typing-score-saved', { isNewHighscore, xpGained });
+
         } catch (error) {
-            console.error("タイピングスコアの保存/トークン検証に失敗:", error);
+            console.error("タイピングスコアの保存/XP更新に失敗:", error);
         }
     });
 });
@@ -385,7 +416,7 @@ function sendNextQuestion(roomId) {
         users: room.users
     };
     if (state.answerFormat === 'multiple-choice') {
-        let options = new Set([question.answer, ...question.dummies]);
+        let options = new Set([question.answer, ...(question.dummies || [])]);
         if (options.size < 3) {
             const allDummies = allQuizData.map(q => q.answer).filter(ans => !options.has(ans));
             while (options.size < 3 && allDummies.length > 0) {

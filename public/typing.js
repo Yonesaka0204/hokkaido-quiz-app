@@ -1,11 +1,10 @@
-// public/typing.js (バーチャルキーボード対応・全文)
+// public/typing.js (「ん」入力バグ修正版)
 
 // --- DOM要素の取得 ---
 const startScreen = document.getElementById('start-screen');
 const gameScreen = document.getElementById('game-screen');
 const resultsScreen = document.getElementById('results-screen');
 const timeButtons = document.querySelectorAll('.time-btn');
-
 const timerDisplay = document.querySelector('#timer span');
 const kpmDisplay = document.querySelector('#kpm span');
 const accuracyDisplay = document.querySelector('#accuracy span');
@@ -15,13 +14,13 @@ const romajiDisplay = document.getElementById('romaji-display');
 const scoreDisplay = document.getElementById('score-display');
 const comboDisplay = document.getElementById('combo-display');
 const wordContainer = document.getElementById('word-container');
-const virtualKeyboard = document.getElementById('virtual-keyboard'); // キーボード要素を取得
-
+const virtualKeyboard = document.getElementById('virtual-keyboard');
 const finalScoreDisplay = document.getElementById('final-score');
 const maxComboDisplay = document.getElementById('max-combo');
 const avgKpmDisplay = document.getElementById('avg-kpm');
 const finalAccuracyDisplay = document.getElementById('final-accuracy');
 const highscoreDisplay = document.getElementById('highscore-message');
+const xpMessage = document.getElementById('xp-message');
 const playAgainBtn = document.getElementById('play-again-btn');
 
 // --- 効果音関連 ---
@@ -38,21 +37,9 @@ function playSound(sound) {
 }
 
 // --- グローバル変数 ---
-let allQuizData = [];
-let currentGameTime = 0;
-let timeLimit = 0;
-let timerInterval = null;
-let isTimerActive = false;
-let currentQuestion = null;
-let remainingHiragana = '';
-let pendingRomajiOptions = [];
-let currentTypedRomaji = '';
-let fullRomajiToDisplay = '';
-let score = 0;
-let combo = 0;
-let maxCombo = 0;
-let totalTyped = 0;
-let correctTyped = 0;
+let allQuizData = [], currentGameTime = 0, timeLimit = 0, timerInterval = null, isTimerActive = false;
+let currentQuestion = null, remainingHiragana = '', pendingRomajiOptions = [], currentTypedRomaji = '', fullRomajiToDisplay = '';
+let score = 0, combo = 0, maxCombo = 0, totalTyped = 0, correctTyped = 0;
 const socket = io();
 let currentUser = null;
 
@@ -100,24 +87,26 @@ function getComboMultiplier(currentCombo) {
 
 function generateFullRomajiDisplay(hiragana) {
     let result = '';
-    let i = 0;
-    while (i < hiragana.length) {
+    for (let i = 0; i < hiragana.length; i++) {
         let chunk = hiragana.substring(i, i + 2);
         if (romajiMap[chunk]) {
-            result += romajiMap[chunk][0];
-            i += 2;
-        } else {
-            chunk = hiragana[i];
-            if (chunk === 'っ') {
-                if (i + 1 < hiragana.length) {
-                    let nextChunk = hiragana.substring(i + 1, i + 3);
-                    let nextRomaji = romajiMap[nextChunk] ? romajiMap[nextChunk][0] : (romajiMap[hiragana[i+1]] ? romajiMap[hiragana[i+1]][0] : '');
-                    result += nextRomaji[0] || '';
-                }
-            } else {
-                 result += romajiMap[chunk] ? romajiMap[chunk][0] : '';
+            result += romajiMap[chunk][0]; i++; continue;
+        }
+        chunk = hiragana[i];
+        if (chunk === 'っ') {
+            if (i + 1 < hiragana.length) {
+                let nextChunk = hiragana.substring(i + 1, i + 3);
+                let nextRomaji = romajiMap[nextChunk]?.[0] || romajiMap[hiragana[i+1]]?.[0] || '';
+                result += nextRomaji[0] || '';
             }
-            i++;
+        } else if (chunk === 'ん') {
+            const nextHira = hiragana[i+1];
+            if (nextHira && 'あいうえおやゆよなにぬねの'.includes(nextHira)) {
+                result += 'n';
+            }
+            result += 'n';
+        } else {
+             result += romajiMap[chunk]?.[0] || '';
         }
     }
     return result;
@@ -125,35 +114,39 @@ function generateFullRomajiDisplay(hiragana) {
 
 function updateRomajiDisplay() {
     romajiDisplay.innerHTML = '';
-    let typedRomajiLength = 0;
-
     const typedHiragana = currentQuestion.answer.slice(0, currentQuestion.answer.length - remainingHiragana.length);
-    if(typedHiragana){
-        const typedFullRomaji = generateFullRomajiDisplay(typedHiragana);
-        typedFullRomaji.split('').forEach(char => {
-            const span = document.createElement('span');
-            span.textContent = char;
-            span.className = 'typed';
-            romajiDisplay.appendChild(span);
-        });
-        typedRomajiLength = typedFullRomaji.length;
-    }
+    const typedFullRomaji = generateFullRomajiDisplay(typedHiragana);
+    
+    typedFullRomaji.split('').forEach(char => {
+        const span = document.createElement('span');
+        span.textContent = char;
+        span.className = 'typed';
+        romajiDisplay.appendChild(span);
+    });
 
-    if (currentTypedRomaji) {
-        currentTypedRomaji.split('').forEach(char => {
-            const span = document.createElement('span');
-            span.textContent = char;
-            span.className = 'typed';
-            romajiDisplay.appendChild(span);
-        });
-    }
-
-    const remainingRomajiToDisplay = fullRomajiToDisplay.substring(typedRomajiLength + currentTypedRomaji.length);
-     remainingRomajiToDisplay.split('').forEach(char => {
+    const remainingToDisplay = generateFullRomajiDisplay(remainingHiragana);
+    remainingToDisplay.split('').forEach(char => {
         const span = document.createElement('span');
         span.textContent = char;
         romajiDisplay.appendChild(span);
     });
+}
+
+function completeChunk() {
+    let chunkLength = 1; // デフォルト
+    if (remainingHiragana.startsWith('っ')) {
+        chunkLength = 1;
+    } else {
+        // マッチしたローマ字から、元のひらがなの長さを特定
+        for (const hira in romajiMap) {
+            if (romajiMap[hira].includes(currentTypedRomaji)) {
+                chunkLength = hira.length;
+                break;
+            }
+        }
+    }
+    remainingHiragana = remainingHiragana.substring(chunkLength);
+    prepareNextChunk();
 }
 
 function prepareNextChunk() {
@@ -170,7 +163,6 @@ function prepareNextChunk() {
         } else {
              comboDisplay.classList.remove('combo-animation');
         }
-        
         chooseNewQuestion();
         return;
     }
@@ -224,10 +216,7 @@ function handleKeyPress(e) {
             currentGameTime--;
             timerDisplay.textContent = currentGameTime;
             updateStats();
-            
-            if (currentGameTime <= 0) {
-                endGame();
-            }
+            if (currentGameTime <= 0) endGame();
         }, 1000);
     }
 
@@ -236,10 +225,9 @@ function handleKeyPress(e) {
 
     totalTyped++;
     const nextTyped = currentTypedRomaji + key;
-    
     const possibleOptions = pendingRomajiOptions.filter(opt => opt.startsWith(nextTyped));
 
-    if (possibleOptions.length > 0) {
+    if (possibleOptions.length > 0) { // タイプが正しい場合
         playSound(sounds.type);
         correctTyped++;
         const comboMultiplier = getComboMultiplier(combo);
@@ -248,29 +236,25 @@ function handleKeyPress(e) {
 
         currentTypedRomaji = nextTyped;
 
-        if (possibleOptions.includes(currentTypedRomaji)) {
-            let chunkLength = 1;
-            if (remainingHiragana.startsWith('っ')) {
-                chunkLength = 1;
-            } else {
-                for (const hira in romajiMap) {
-                    if (romajiMap[hira].includes(currentTypedRomaji)) {
-                        chunkLength = hira.length;
-                        break;
-                    }
-                }
-            }
-            remainingHiragana = remainingHiragana.substring(chunkLength);
-            prepareNextChunk();
+        if (possibleOptions.length === 1 && possibleOptions[0] === currentTypedRomaji) {
+            completeChunk();
         }
-    } else {
+    } else { // タイプが間違っている場合
+        // でも、もしかしたら前の「ん」を確定させて、次の文字の先頭かもしれない
+        if (currentTypedRomaji === 'n' && pendingRomajiOptions.includes('n')) {
+            // 'n'で「ん」を確定させる
+            completeChunk();
+            // もう一度、今押されたキーで判定を試みる
+            handleKeyPress(e);
+            return; // この後のミス判定は行わない
+        }
+
         playSound(sounds.error);
         combo = 0;
         score -= 500;
         if (score < 0) score = 0;
         scoreDisplay.textContent = `SCORE: ${score}`;
         comboDisplay.textContent = '';
-        
         wordContainer.classList.add('shake-animation');
         setTimeout(() => wordContainer.classList.remove('shake-animation'), 200);
     }
@@ -299,14 +283,13 @@ function returnToStartScreen() {
 function startGame(time) {
     timeLimit = time;
     currentGameTime = time;
-    score = 0;
-    combo = 0;
-    maxCombo = 0;
-    totalTyped = 0;
-    correctTyped = 0;
+    score = 0; combo = 0; maxCombo = 0;
+    totalTyped = 0; correctTyped = 0;
     isTimerActive = false;
     scoreDisplay.textContent = 'SCORE: 0';
     comboDisplay.textContent = '';
+    highscoreDisplay.style.display = 'none';
+    xpMessage.style.display = 'none';
 
     startScreen.style.display = 'none';
     resultsScreen.style.display = 'none';
@@ -346,17 +329,14 @@ function endGame() {
                 timeMode: timeLimit,
                 score: finalScore
             });
-        }).catch(error => {
-            console.error("IDトークンの取得に失敗:", error);
-        });
+        }).catch(error => console.error("IDトークンの取得に失敗:", error));
     }
 }
 
 // --- イベントリスナー設定 ---
 timeButtons.forEach(button => {
     button.addEventListener('click', () => {
-        const time = parseInt(button.dataset.time, 10);
-        startGame(time);
+        startGame(parseInt(button.dataset.time, 10));
     });
 });
 
@@ -367,20 +347,13 @@ playAgainBtn.addEventListener('click', () => {
 
 virtualKeyboard.addEventListener('click', (e) => {
     if (e.target.classList.contains('key')) {
-        const key = e.target.dataset.key;
-        const fakeEvent = {
-            key: key,
-            preventDefault: () => {}
-        };
-        handleKeyPress(fakeEvent);
+        handleKeyPress({ key: e.target.dataset.key, preventDefault: () => {} });
     }
 });
 
 // --- Socket.IO & Firebase ---
 auth.onAuthStateChanged(user => {
-    if (user) {
-        currentUser = user;
-    }
+    if (user) currentUser = user;
 });
 
 socket.on('connect', () => {
@@ -392,11 +365,18 @@ socket.on('typing-data', (data) => {
     timeButtons.forEach(b => b.disabled = false);
 });
 
-socket.on('typing-score-saved', ({ isNewHighscore }) => {
+socket.on('typing-score-saved', ({ isNewHighscore, xpGained }) => {
     if (isNewHighscore) {
         highscoreDisplay.textContent = '🎉 ハイスコア更新！';
         highscoreDisplay.style.display = 'block';
     } else {
         highscoreDisplay.style.display = 'none';
+    }
+    
+    if (xpGained > 0) {
+        xpMessage.textContent = `+${xpGained} XP を獲得しました！`;
+        xpMessage.style.display = 'block';
+    } else {
+        xpMessage.style.display = 'none';
     }
 });
