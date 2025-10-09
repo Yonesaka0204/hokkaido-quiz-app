@@ -1,4 +1,4 @@
-// public/typing.js (Escapeキー対応版)
+// public/typing.js (タイマー修正版)
 
 // --- DOM要素の取得 ---
 const startScreen = document.getElementById('start-screen');
@@ -41,6 +41,7 @@ let allQuizData = [];
 let currentGameTime = 0;
 let timeLimit = 0;
 let timerInterval = null;
+let isTimerActive = false; // ▼▼▼ タイマーが作動中かどうかの状態を追加 ▼▼▼
 let currentQuestion = null;
 let remainingHiragana = '';
 let pendingRomajiOptions = [];
@@ -214,6 +215,22 @@ function updateStats() {
 }
 
 function handleKeyPress(e) {
+    // ▼▼▼ 修正点：タイマーを開始する処理を追加 ▼▼▼
+    if (!isTimerActive) {
+        isTimerActive = true;
+        // 最初のキー入力時にタイマーを開始
+        timerInterval = setInterval(() => {
+            currentGameTime--;
+            timerDisplay.textContent = currentGameTime;
+            updateStats();
+            
+            if (currentGameTime <= 0) {
+                endGame();
+            }
+        }, 1000);
+    }
+    // ▲▲▲ ここまで ▲▲▲
+
     e.preventDefault();
     const key = e.key.toLowerCase();
     if (!"abcdefghijklmnopqrstuvwxyz'-".includes(key)) return;
@@ -262,7 +279,6 @@ function handleKeyPress(e) {
     updateStats();
 }
 
-// ▼▼▼ ここから追加 ▼▼▼
 function handleEscapeKey(e) {
     if (e.key === 'Escape') {
         if (confirm('ゲームを中断して選択画面に戻りますか？')) {
@@ -272,19 +288,13 @@ function handleEscapeKey(e) {
 }
 
 function returnToStartScreen() {
-    // タイマーを停止
     clearInterval(timerInterval);
-    
-    // イベントリスナーを削除
     document.removeEventListener('keydown', handleKeyPress);
     document.removeEventListener('keydown', handleEscapeKey);
-    
-    // 画面の表示を切り替え
     gameScreen.style.display = 'none';
     resultsScreen.style.display = 'none';
     startScreen.style.display = 'block';
 }
-// ▲▲▲ ここまで ▲▲▲
 
 function startGame(time) {
     timeLimit = time;
@@ -294,6 +304,7 @@ function startGame(time) {
     maxCombo = 0;
     totalTyped = 0;
     correctTyped = 0;
+    isTimerActive = false; // ▼▼▼ 修正点：タイマー状態をリセット ▼▼▼
     scoreDisplay.textContent = 'SCORE: 0';
     comboDisplay.textContent = '';
 
@@ -303,28 +314,18 @@ function startGame(time) {
 
     chooseNewQuestion();
     updateStats();
-    timerDisplay.textContent = currentGameTime;
+    timerDisplay.textContent = currentGameTime; // ▼▼▼ 修正点：タイマーの初期値を表示 ▼▼▼
     
-    // イベントリスナーを設定
     document.addEventListener('keydown', handleKeyPress);
-    document.addEventListener('keydown', handleEscapeKey); // Escapeキーのリスナーを追加
+    document.addEventListener('keydown', handleEscapeKey);
 
-    timerInterval = setInterval(() => {
-        currentGameTime--;
-        timerDisplay.textContent = currentGameTime;
-        updateStats();
-        
-        if (currentGameTime <= 0) {
-            endGame();
-        }
-    }, 1000);
+    // ▼▼▼ 修正点：ここにあったタイマー開始処理を handleKeyPress に移動 ▼▼▼
 }
 
 function endGame() {
-    // タイマーとイベントリスナーを停止・削除
     clearInterval(timerInterval);
     document.removeEventListener('keydown', handleKeyPress);
-    document.removeEventListener('keydown', handleEscapeKey); // Escapeキーのリスナーを削除
+    document.removeEventListener('keydown', handleEscapeKey);
     
     const finalScore = score;
     const finalKpm = timeLimit > 0 ? (correctTyped / timeLimit) * 60 : 0;
@@ -339,9 +340,14 @@ function endGame() {
     resultsScreen.style.display = 'block';
     
     if (currentUser) {
-        socket.emit('submit-typing-score', {
-            timeMode: timeLimit,
-            score: finalScore
+        currentUser.getIdToken(true).then(idToken => {
+            socket.emit('submit-typing-score', {
+                idToken: idToken,
+                timeMode: timeLimit,
+                score: finalScore
+            });
+        }).catch(error => {
+            console.error("IDトークンの取得に失敗:", error);
         });
     }
 }
