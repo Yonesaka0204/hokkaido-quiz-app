@@ -5,7 +5,6 @@ const startScreen = document.getElementById('start-screen');
 const gameScreen = document.getElementById('game-screen');
 const resultsScreen = document.getElementById('results-screen');
 const timeButtons = document.querySelectorAll('.time-btn');
-const flickModeBtn = document.getElementById('flick-mode-btn');
 const timerDisplay = document.querySelector('#timer span');
 const kpmDisplay = document.querySelector('#kpm span');
 const accuracyDisplay = document.querySelector('#accuracy span');
@@ -356,35 +355,40 @@ function endGame() {
 // --- イベントリスナー設定 ---
 timeButtons.forEach(button => {
     button.addEventListener('click', () => {
-        if(button.id === 'flick-mode-btn') return;
+        if (button.disabled) return;
         const time = parseInt(button.dataset.time, 10);
         startGame(time);
     });
-});
-
-flickModeBtn.addEventListener('click', () => {
-    window.location.href = '/flick';
 });
 
 playAgainBtn.addEventListener('click', () => {
     resultsScreen.style.display = 'none';
     startScreen.style.display = 'block';
 });
+
 virtualKeyboard.addEventListener('click', (e) => {
     if (e.target.classList.contains('key')) {
         handleKeyPress({ key: e.target.dataset.key, preventDefault: () => {} });
     }
 });
+
 auth.onAuthStateChanged(user => {
     if (user) currentUser = user;
 });
+
 socket.on('connect', () => {
     socket.emit('get-typing-data');
 });
+
 socket.on('typing-data', (data) => {
     allQuizData = data;
-    timeButtons.forEach(b => b.disabled = false);
+    timeButtons.forEach(b => {
+        if (b.id !== 'flick-mode-btn') {
+            b.disabled = false;
+        }
+    });
 });
+
 socket.on('typing-score-saved', ({ isNewHighscore, xpGained }) => {
     if (isNewHighscore) {
         highscoreDisplay.textContent = '🎉 ハイスコア更新！';
