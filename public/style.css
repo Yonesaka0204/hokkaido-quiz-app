@@ -621,3 +621,11 @@ input:focus::placeholder, textarea:focus::placeholder { color: transparent; }
     margin-top: 0; /* 親要素のmarginを適用するためリセット */
 }
 /* ▲▲▲ ここまで ▲▲▲ */
+/* public/style.css の末尾に追記 */
+
+.ranking-box.flick-ranking h2 {
+    border-bottom-color: #e67e22;
+}
+.ranking-box.flick-ranking .rank-stat {
+    color: #e67e22;
+}

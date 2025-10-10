@@ -1,0 +1,82 @@
+body {
+    background-color: #e9ecef;
+}
+#stats-bar {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+.stat-item span {
+    font-family: 'Courier New', Courier, monospace;
+}
+#word-container {
+    margin: 1.5rem 0;
+}
+#kanji-display {
+    font-size: 3rem;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 0.5rem;
+}
+#hiragana-display {
+    font-size: 1.3rem;
+    color: #777;
+}
+
+/* 実際に文字を入力するinput要素は見えなくする */
+#flick-input {
+    position: absolute;
+    left: -9999px;
+    top: -9999px;
+    opacity: 0;
+}
+
+/* ユーザーに見せるための、入力フィードバック表示エリア */
+#input-feedback-container {
+    background: #fff;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+#input-feedback {
+    min-height: 40px;
+    font-size: 2rem;
+    font-weight: bold;
+    letter-spacing: 0.1em;
+    color: #333;
+    text-align: left;
+}
+#input-feedback .correct { color: #212529; }
+#input-feedback .untyped { color: #adb5bd; }
+
+/* ミスタイプ時のシェイクアニメーション */
+.shake-animation {
+    animation: shake 0.2s ease-in-out;
+}
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+/* 結果表示画面用のスタイル */
+.result-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;
+    margin: 2rem 0; text-align: left;
+}
+.result-item {
+    background-color: #f8f9fa; padding: 1.5rem; border-radius: 8px;
+}
+.result-label {
+    display: block; font-size: 1.1rem; color: #6c757d; margin-bottom: 0.5rem;
+}
+.result-value {
+    display: block; font-size: 2.5rem; font-weight: bold; color: #343a40;
+}
+.result-actions { margin-top: 2rem; }
+#highscore-message, #xp-message {
+    font-size: 1.5rem; font-weight: bold; color: #e67e22; margin-top: 1.5rem;
+}

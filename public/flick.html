@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>フリック入力</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/flick-style.css">
+</head>
+<body>
+    <div id="start-screen" class="container">
+        <h1>地名タイピング (フリック)</h1>
+        <p>スマートフォン専用モードです。</p>
+        <div class="time-options">
+            <button id="start-btn" class="time-btn">60秒チャレンジ スタート</button>
+        </div>
+        <a href="/" class="secondary-btn" style="margin-top: 2rem;">トップページに戻る</a>
+    </div>
+
+    <div id="game-screen" class="container" style="display: none;">
+        <div id="stats-bar">
+            <div id="timer" class="stat-item">時間: <span>60</span></div>
+            <div id="score" class="stat-item">SCORE: <span>0</span></div>
+            <div id="combo" class="stat-item">COMBO: <span>0</span></div>
+        </div>
+
+        <div id="word-container">
+            <div id="kanji-display">問題読込中...</div>
+            <div id="hiragana-display"></div>
+        </div>
+
+        <div id="input-feedback-container">
+            <div id="input-feedback"></div>
+        </div>
+        
+        <input type="text" id="flick-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+    </div>
+
+    <div id="results-screen" class="container" style="display: none;">
+        <h1>結果</h1>
+        <div class="result-grid">
+            <div class="result-item">
+                <span class="result-label">最終スコア</span>
+                <span id="final-score" class="result-value">0</span>
+            </div>
+            <div class="result-item">
+                <span class="result-label">最高コンボ</span>
+                <span id="max-combo" class="result-value">0</span>
+            </div>
+        </div>
+        <div id="highscore-message"></div>
+        <div id="xp-message"></div>
+        <div class="result-actions">
+            <button id="play-again-btn">もう一度プレイ</button>
+            <a href="/" class="secondary-btn">トップページに戻る</a>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="/firebase-config.js"></script>
+    <script src="/flick.js"></script>
+</body>
+</html>

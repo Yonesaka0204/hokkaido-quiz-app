@@ -50,6 +50,7 @@ app.get('/room/:roomId', (req, res) => res.sendFile(path.join(__dirname, 'public
 app.get('/room/:roomId/quiz', (req, res) => res.sendFile(path.join(__dirname, 'public/quiz.html')));
 app.get('/room/:roomId/results', (req, res) => res.sendFile(path.join(__dirname, 'public/results.html')));
 app.get('/typing', (req, res) => res.sendFile(path.join(__dirname, 'public/typing.html')));
+app.get('/flick', (req, res) => res.sendFile(path.join(__dirname, 'public/flick.html')));
 
 io.on('connection', (socket) => {
     
@@ -255,11 +256,14 @@ io.on('connection', (socket) => {
             const typing60sRanking = await getRanking('typingScores.60', true);
             const typing120sRanking = await getRanking('typingScores.120', true);
             const typing180sRanking = await getRanking('typingScores.180', true);
+            const flickRanking = await getRanking('flickScores.60', true);
 
             socket.emit('rankings-data', { 
                 levelRanking, ratingRanking, correctRanking, endlessRanking,
-                typing60sRanking, typing120sRanking, typing180sRanking
+                typing60sRanking, typing120sRanking, typing180sRanking,
+                flickRanking
             });
+
         } catch (error) {
             console.error("ランキングデータの取得に失敗:", error);
             const errorMessage = `サーバーでエラーが発生しました。インデックス未作成の可能性があります。エラー内容： ${error.message}`;
@@ -346,51 +350,68 @@ io.on('connection', (socket) => {
         try {
             const decodedToken = await admin.auth().verifyIdToken(idToken);
             const uid = decodedToken.uid;
-
             if (!uid || ![60, 120, 180].includes(timeMode)) return;
 
             const userRef = db.collection('users').doc(uid);
-            
             const xpGained = 20 + Math.floor(score / 200);
             let isNewHighscore = false;
 
             await db.runTransaction(async (transaction) => {
                 const doc = await transaction.get(userRef);
                 if (!doc.exists) return;
-                
                 const data = doc.data();
-                
                 const currentHighscore = (data.typingScores && data.typingScores[timeMode]) || 0;
-                if (score > currentHighscore) {
-                    isNewHighscore = true;
-                }
-
+                if (score > currentHighscore) isNewHighscore = true;
                 let currentLevel = data.level || 1;
                 let currentXp = (data.xp || 0) + xpGained;
                 let xpForNextLevel = Math.floor(100 * Math.pow(currentLevel, 1.5));
-                
                 while(currentXp >= xpForNextLevel){
                    currentXp -= xpForNextLevel;
                    currentLevel++;
                    xpForNextLevel = Math.floor(100 * Math.pow(currentLevel, 1.5));
                 }
-                
-                const updateData = {
-                    xp: currentXp,
-                    level: currentLevel
-                };
-
-                if (isNewHighscore) {
-                    updateData[`typingScores.${timeMode}`] = score;
-                }
-
+                const updateData = { xp: currentXp, level: currentLevel };
+                if (isNewHighscore) updateData[`typingScores.${timeMode}`] = score;
                 transaction.update(userRef, updateData);
             });
 
             socket.emit('typing-score-saved', { isNewHighscore, xpGained });
-
         } catch (error) {
             console.error("タイピングスコアの保存/XP更新に失敗:", error);
+        }
+    });
+
+    socket.on('submit-flick-score', async ({ idToken, score }) => {
+        try {
+            const decodedToken = await admin.auth().verifyIdToken(idToken);
+            const uid = decodedToken.uid;
+            if (!uid) return;
+
+            const userRef = db.collection('users').doc(uid);
+            const xpGained = 20 + Math.floor(score / 200);
+            let isNewHighscore = false;
+
+            await db.runTransaction(async (transaction) => {
+                const doc = await transaction.get(userRef);
+                if (!doc.exists) return;
+                const data = doc.data();
+                const currentHighscore = (data.flickScores && data.flickScores[60]) || 0;
+                if (score > currentHighscore) isNewHighscore = true;
+                let currentLevel = data.level || 1;
+                let currentXp = (data.xp || 0) + xpGained;
+                let xpForNextLevel = Math.floor(100 * Math.pow(currentLevel, 1.5));
+                while(currentXp >= xpForNextLevel){
+                   currentXp -= xpForNextLevel;
+                   currentLevel++;
+                   xpForNextLevel = Math.floor(100 * Math.pow(currentLevel, 1.5));
+                }
+                const updateData = { xp: currentXp, level: currentLevel };
+                if (isNewHighscore) updateData['flickScores.60'] = score;
+                transaction.update(userRef, updateData);
+            });
+            socket.emit('typing-score-saved', { isNewHighscore, xpGained });
+        } catch (error) {
+            console.error("フリックスコアの保存/XP更新に失敗:", error);
         }
     });
 });

@@ -1,10 +1,11 @@
-// public/typing.js (入力判定 最終修正版)
+// public/typing.js
 
 // --- DOM要素の取得 ---
 const startScreen = document.getElementById('start-screen');
 const gameScreen = document.getElementById('game-screen');
 const resultsScreen = document.getElementById('results-screen');
 const timeButtons = document.querySelectorAll('.time-btn');
+const flickModeBtn = document.getElementById('flick-mode-btn');
 const timerDisplay = document.querySelector('#timer span');
 const kpmDisplay = document.querySelector('#kpm span');
 const accuracyDisplay = document.querySelector('#accuracy span');
@@ -42,6 +43,8 @@ let currentQuestion = null, remainingHiragana = '', pendingRomajiOptions = [], c
 let score = 0, combo = 0, maxCombo = 0, totalTyped = 0, correctTyped = 0;
 const socket = io();
 let currentUser = null;
+let tabPressTimer = null;
+const LONG_PRESS_DURATION = 500;
 
 // --- ひらがな→ローマ字変換マップ ---
 const romajiMap = {
@@ -101,9 +104,7 @@ function generateFullRomajiDisplay(hiragana) {
             }
         } else if (chunk === 'ん') {
             const nextHira = hiragana[i+1];
-            if (nextHira && 'あいうえおやゆよなにぬねの'.includes(nextHira)) {
-                result += 'n';
-            }
+            if (nextHira && 'あいうえおやゆよなにぬねの'.includes(nextHira)) result += 'n';
             result += 'n';
         } else {
              result += romajiMap[chunk]?.[0] || '';
@@ -116,28 +117,21 @@ function updateRomajiDisplay() {
     romajiDisplay.innerHTML = '';
     const typedHiragana = currentQuestion.answer.slice(0, currentQuestion.answer.length - remainingHiragana.length);
     const typedFullRomaji = generateFullRomajiDisplay(typedHiragana);
-    
     typedFullRomaji.split('').forEach(char => {
         const span = document.createElement('span');
         span.textContent = char;
         span.className = 'typed';
         romajiDisplay.appendChild(span);
     });
-
     const guideText = pendingRomajiOptions[0] || '';
     guideText.split('').forEach((char, index) => {
         const span = document.createElement('span');
         span.textContent = char;
-        if (index < currentTypedRomaji.length) {
-            span.className = 'typed';
-        }
+        if (index < currentTypedRomaji.length) span.className = 'typed';
         romajiDisplay.appendChild(span);
     });
-
     let currentHiraChunk = remainingHiragana.substring(0, 2);
-    if (!romajiMap[currentHiraChunk]) {
-        currentHiraChunk = remainingHiragana.substring(0, 1);
-    }
+    if (!romajiMap[currentHiraChunk]) currentHiraChunk = remainingHiragana.substring(0, 1);
     const futureHiragana = remainingHiragana.substring(currentHiraChunk.length);
     const futureRomaji = generateFullRomajiDisplay(futureHiragana);
     futureRomaji.split('').forEach(char => {
@@ -179,12 +173,8 @@ function prepareNextChunk() {
         chooseNewQuestion();
         return;
     }
-
     let chunk = remainingHiragana.substring(0, 2);
-    if (!romajiMap[chunk]) {
-        chunk = remainingHiragana.substring(0, 1);
-    }
-    
+    if (!romajiMap[chunk]) chunk = remainingHiragana.substring(0, 1);
     if (chunk === 'っ') {
         let nextChunk = remainingHiragana.substring(1, 3);
         let nextOptions = romajiMap[nextChunk];
@@ -194,7 +184,6 @@ function prepareNextChunk() {
         }
         pendingRomajiOptions = nextOptions ? nextOptions.map(opt => opt[0]) : [];
     } else {
-        // 「ん」も他の文字と同様に、常に全てのパターンを候補とする
         pendingRomajiOptions = [...(romajiMap[chunk] || [])];
     }
     updateRomajiDisplay();
@@ -218,10 +207,8 @@ function updateStats() {
     accuracyDisplay.textContent = `${accuracy}%`;
 }
 
-// ▼▼▼ 入力判定ロジックを全面的に修正 ▼▼▼
 function handleKeyPress(e) {
     if(e.preventDefault) e.preventDefault();
-    
     if (!isTimerActive) {
         isTimerActive = true;
         timerInterval = setInterval(() => {
@@ -231,15 +218,12 @@ function handleKeyPress(e) {
             if (currentGameTime <= 0) endGame();
         }, 1000);
     }
-
     const key = e.key.toLowerCase();
     if (!"abcdefghijklmnopqrstuvwxyz'-".includes(key)) return;
-
     totalTyped++;
     const nextTyped = currentTypedRomaji + key;
     const possibleOptions = pendingRomajiOptions.filter(opt => opt.startsWith(nextTyped));
-
-    if (possibleOptions.length > 0) { // 正しいキー入力が続いている場合
+    if (possibleOptions.length > 0) {
         playSound(sounds.type);
         correctTyped++;
         const comboMultiplier = getComboMultiplier(combo);
@@ -247,22 +231,15 @@ function handleKeyPress(e) {
         scoreDisplay.textContent = `SCORE: ${score}`;
         currentTypedRomaji = nextTyped;
         pendingRomajiOptions = possibleOptions;
-
         if (possibleOptions.length === 1 && possibleOptions[0] === currentTypedRomaji) {
             completeChunk();
         }
-    } else { // タイプミス、または次の文字への先行入力の可能性がある場合
-        
-        // 直前までの入力が、それ自体で有効なパターンかチェック（例：「n」）
+    } else {
         if (pendingRomajiOptions.includes(currentTypedRomaji)) {
-            // 有効な場合、一度現在の文字を確定させる
             completeChunk();
-            // そして、今押されたキーで、新しい文字の判定をもう一度行う
             handleKeyPress(e);
-            return; // この後のミス判定は行わない
+            return;
         }
-
-        // 上記の条件にも当てはまらない、完全なミスタイプの場合
         playSound(sounds.error);
         combo = 0;
         score -= 100;
@@ -275,8 +252,6 @@ function handleKeyPress(e) {
     updateRomajiDisplay();
     updateStats();
 }
-// ▲▲▲ ここまで ▲▲▲
-
 
 function handleEscapeKey(e) {
     if (e.key === 'Escape') {
@@ -286,10 +261,40 @@ function handleEscapeKey(e) {
     }
 }
 
-function returnToStartScreen() {
+function quickRetry() {
     clearInterval(timerInterval);
+    timerInterval = null;
     document.removeEventListener('keydown', handleKeyPress);
     document.removeEventListener('keydown', handleEscapeKey);
+    document.removeEventListener('keydown', handleTabKeyDown);
+    document.removeEventListener('keyup', handleTabKeyUp);
+    startGame(timeLimit);
+}
+
+function handleTabKeyDown(e) {
+    if (e.key === 'Tab') {
+        e.preventDefault();
+        if (!tabPressTimer) {
+            tabPressTimer = setTimeout(quickRetry, LONG_PRESS_DURATION);
+        }
+    }
+}
+
+function handleTabKeyUp(e) {
+    if (e.key === 'Tab') {
+        clearTimeout(tabPressTimer);
+        tabPressTimer = null;
+    }
+}
+
+function returnToStartScreen() {
+    clearInterval(timerInterval);
+    clearTimeout(tabPressTimer);
+    tabPressTimer = null;
+    document.removeEventListener('keydown', handleKeyPress);
+    document.removeEventListener('keydown', handleEscapeKey);
+    document.removeEventListener('keydown', handleTabKeyDown);
+    document.removeEventListener('keyup', handleTabKeyUp);
     virtualKeyboard.classList.remove('visible');
     gameScreen.style.display = 'none';
     resultsScreen.style.display = 'none';
@@ -315,12 +320,18 @@ function startGame(time) {
     timerDisplay.textContent = currentGameTime;
     document.addEventListener('keydown', handleKeyPress);
     document.addEventListener('keydown', handleEscapeKey);
+    document.addEventListener('keydown', handleTabKeyDown);
+    document.addEventListener('keyup', handleTabKeyUp);
 }
 
 function endGame() {
     clearInterval(timerInterval);
+    clearTimeout(tabPressTimer);
+    tabPressTimer = null;
     document.removeEventListener('keydown', handleKeyPress);
     document.removeEventListener('keydown', handleEscapeKey);
+    document.removeEventListener('keydown', handleTabKeyDown);
+    document.removeEventListener('keyup', handleTabKeyUp);
     virtualKeyboard.classList.remove('visible');
     const finalScore = score;
     const finalKpm = timeLimit > 0 ? (correctTyped / timeLimit) * 60 : 0;
@@ -342,11 +353,19 @@ function endGame() {
     }
 }
 
+// --- イベントリスナー設定 ---
 timeButtons.forEach(button => {
     button.addEventListener('click', () => {
-        startGame(parseInt(button.dataset.time, 10));
+        if(button.id === 'flick-mode-btn') return;
+        const time = parseInt(button.dataset.time, 10);
+        startGame(time);
     });
 });
+
+flickModeBtn.addEventListener('click', () => {
+    window.location.href = '/flick';
+});
+
 playAgainBtn.addEventListener('click', () => {
     resultsScreen.style.display = 'none';
     startScreen.style.display = 'block';
