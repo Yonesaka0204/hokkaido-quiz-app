@@ -13,8 +13,14 @@ const multiplayerJoinForm = document.getElementById('multiplayer-join-form');
 const roomIdInputMulti = document.getElementById('room-id-input-multi');
 const joinRoomFormGuest = document.getElementById('join-room-form-guest');
 const typingGameBtn = document.getElementById('typing-game-btn');
-// ▼▼▼ ゲストボタン取得を追加 ▼▼▼
-const guestTypingBtn = document.getElementById('guest-typing-btn'); 
+const guestTypingBtn = document.getElementById('guest-typing-btn');
+
+// ▼▼▼ チュートリアル関連の要素を取得 ▼▼▼
+const helpBtn = document.getElementById('help-btn');
+const tutorialModal = document.getElementById('tutorial-modal');
+const closeTutorialIcon = document.getElementById('close-tutorial');
+const closeTutorialBtn = document.getElementById('close-tutorial-btn');
+// ▲▲▲ ここまで ▲▲▲
 
 // --- ログイン状態の監視 ---
 auth.onAuthStateChanged(user => {
@@ -72,10 +78,44 @@ joinRoomFormGuest.addEventListener('submit', (e) => {
 typingGameBtn.addEventListener('click', () => {
     window.location.href = '/typing';
 });
-
-// ▼▼▼ ゲストボタンの処理を追加 ▼▼▼
 if (guestTypingBtn) {
     guestTypingBtn.addEventListener('click', () => {
         window.location.href = '/typing';
     });
 }
+
+// ▼▼▼ チュートリアル機能の実装 ▼▼▼
+
+// モーダルを表示する関数
+function showTutorial() {
+    tutorialModal.style.display = 'flex';
+}
+
+// モーダルを閉じる関数
+function closeTutorial() {
+    tutorialModal.style.display = 'none';
+    // 「見た」という記録をブラウザに残す
+    localStorage.setItem('tutorialSeen', 'true');
+}
+
+// 初回アクセス判定
+window.addEventListener('DOMContentLoaded', () => {
+    const hasSeenTutorial = localStorage.getItem('tutorialSeen');
+    if (!hasSeenTutorial) {
+        // まだ見ていない場合のみ自動表示
+        showTutorial();
+    }
+});
+
+// ボタン操作
+helpBtn.addEventListener('click', showTutorial);
+closeTutorialIcon.addEventListener('click', closeTutorial);
+closeTutorialBtn.addEventListener('click', closeTutorial);
+
+// 背景クリックでも閉じるようにする
+tutorialModal.addEventListener('click', (e) => {
+    if (e.target === tutorialModal) {
+        closeTutorial();
+    }
+});
+// ▲▲▲ ここまで ▲▲▲
