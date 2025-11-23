@@ -53,34 +53,30 @@ function chooseNewQuestion() {
     updateInputFeedback('');
 }
 
-// 入力状況の視覚フィードバックのみ行う（判定はしない）
+// 入力状況の視覚フィードバックのみ行う
 function updateInputFeedback(currentValue) {
     inputFeedback.innerHTML = '';
     const answer = currentQuestion.answer;
     
-    // 入力された文字を表示
-    // 正解と一致している部分は黒(correct)、違う部分はグレー(untyped)などで表示
     for (let i = 0; i < Math.max(answer.length, currentValue.length); i++) {
         const span = document.createElement('span');
         
         if (i < currentValue.length) {
-            // ユーザーが入力した文字がある場合
             span.textContent = currentValue[i];
             if (i < answer.length && currentValue[i] === answer[i]) {
-                span.className = 'correct'; // 合っている文字
+                span.className = 'correct'; 
             } else {
-                span.className = 'untyped'; // 間違っている文字（まだペナルティではない）
+                span.className = 'untyped'; 
             }
         } else {
-            // 未入力部分は何も表示しない（既存デザインを踏襲）
+            // 未入力部分は表示なし
         }
         inputFeedback.appendChild(span);
     }
 }
 
-// 入力イベント（文字を打っている最中の処理）
+// 入力イベント
 function handleInput() {
-    // 最初の入力でタイマーを開始
     if (!isTimerActive && allQuizData.length > 0) {
         isTimerActive = true;
         timerInterval = setInterval(() => {
@@ -95,11 +91,10 @@ function handleInput() {
     previousInput = currentValue;
 }
 
-// ★★★ Enterキー（改行）が押された時の判定処理 ★★★
+// Enterキー判定
 function handleKeydown(e) {
-    // Enterキーが押されたら判定を実行
     if (e.key === 'Enter') {
-        e.preventDefault(); // 改行文字の挿入を防ぐ
+        e.preventDefault();
         checkAnswer();
     }
 }
@@ -109,11 +104,10 @@ function checkAnswer() {
     const answer = currentQuestion.answer;
 
     if (value === answer) {
-        // --- 正解！ ---
+        // 正解
         combo++;
         if (combo > maxCombo) maxCombo = combo;
         
-        // スコア計算（文字数 × 100 × 倍率）
         const comboMultiplier = getComboMultiplier(combo);
         const points = Math.round(answer.length * 100 * comboMultiplier);
         score += points;
@@ -121,22 +115,19 @@ function checkAnswer() {
         scoreDisplay.textContent = score;
         comboDisplay.textContent = combo;
         
-        // 次の問題へ
         chooseNewQuestion();
     } else {
-        // --- 不正解！ ---
-        score -= 100; // ペナルティ
+        // 不正解
+        score -= 100;
         if (score < 0) score = 0;
-        combo = 0; // コンボリセット
+        combo = 0;
         
         scoreDisplay.textContent = score;
         comboDisplay.textContent = combo;
         
-        // シェイクアニメーションでミスを通知
         inputFeedback.classList.add('shake-animation');
         setTimeout(() => inputFeedback.classList.remove('shake-animation'), 200);
         
-        // 入力をクリアして再挑戦させる
         flickInput.value = '';
         updateInputFeedback('');
     }
@@ -155,7 +146,6 @@ function startGame() {
     resultsScreen.style.display = 'none';
     gameScreen.style.display = 'block';
     
-    // スマホキーボードで「改行」キーを「完了/実行」のような見た目にするヒント
     flickInput.setAttribute('enterkeyhint', 'done');
     flickInput.focus();
     
@@ -229,9 +219,6 @@ socket.on('typing-score-saved', ({ isNewHighscore }) => {
     }
 });
 
-startBtn.disabled = true;
-startBtn.textContent = '問題データ読込中...';
-
 const handleStart = (event) => {
     event.preventDefault();
     startScreen.style.display = 'none';
@@ -245,6 +232,16 @@ startBtn.addEventListener('touchstart', handleStart);
 playAgainBtn.addEventListener('click', handleStart);
 playAgainBtn.addEventListener('touchstart', handleStart);
 
-// イベントリスナーの登録
-flickInput.addEventListener('input', handleInput);     // 文字入力時の表示更新用
-flickInput.addEventListener('keydown', handleKeydown); // Enterキー判定用
+flickInput.addEventListener('input', handleInput);
+flickInput.addEventListener('keydown', handleKeydown);
+
+// ★★★ 追加: 画面タップでキーボードを再表示する処理 ★★★
+document.addEventListener('click', (e) => {
+    // ゲーム画面が表示されている時のみ有効
+    if (gameScreen.style.display !== 'none') {
+        // ボタン等の操作パーツ以外の場所をタップしたらフォーカスを戻す
+        if (e.target.tagName !== 'BUTTON' && e.target.tagName !== 'A' && e.target !== flickInput) {
+            flickInput.focus();
+        }
+    }
+});
