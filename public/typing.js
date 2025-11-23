@@ -1,4 +1,4 @@
-// public/typing.js (「ん」バグ修正版)
+// public/typing.js
 
 // --- DOM要素の取得 ---
 const startScreen = document.getElementById('start-screen');
@@ -47,6 +47,7 @@ function playSound(sound) {
 // --- グローバル変数 ---
 let allQuizData = [], currentGameTime = 0, timeLimit = 0, timerInterval = null, isTimerActive = false;
 let currentQuestion = null, remainingHiragana = '', pendingRomajiOptions = [], currentTypedRomaji = '', fullRomajiToDisplay = '';
+let currentHiraChunk = ''; // ★★★ 修正点：現在入力中のひらがなを記憶する変数 ★★★
 let score = 0, combo = 0, maxCombo = 0, totalTyped = 0, correctTyped = 0;
 const socket = io();
 let currentUser = null;
@@ -67,7 +68,7 @@ const romajiMap = {
     'わ': ['wa'], 'を': ['wo'], 'ん': ["n", "n'", "nn"],
     'が': ['ga'], 'ぎ': ['gi'], 'ぐ': ['gu'], 'げ': ['ge'], 'ご': ['go'],
     'ざ': ['za'], 'じ': ['ji', 'zi'], 'ず': ['zu'], 'ぜ': ['ze'], 'ぞ': ['zo'],
-    'だ': ['da'], 'ぢ': ['di'], 'づ': ['du'], 'で': ['de'], 'ど': ['do'],
+    'だ': ['da'], 'ぢ': ['di'], 'づ': ['du'], 'de': ['de'], 'ど': ['do'],
     'ば': ['ba'], 'び': ['bi'], 'ぶ': ['bu'], 'べ': ['be'], 'ぼ': ['bo'],
     'ぱ': ['pa'], 'ぴ': ['pi'], 'ぷ': ['pu'], 'ぺ': ['pe'], 'ぽ': ['po'],
     'きゃ': ['kya'], 'きゅ': ['kyu'], 'きょ': ['kyo'],
@@ -137,8 +138,9 @@ function updateRomajiDisplay() {
         if (index < currentTypedRomaji.length) span.className = 'typed';
         romajiDisplay.appendChild(span);
     });
-    let currentHiraChunk = remainingHiragana.substring(0, 2);
-    if (!romajiMap[currentHiraChunk]) currentHiraChunk = remainingHiragana.substring(0, 1);
+    
+    // 残りの文字の表示（現在のチャンクを除いた部分）
+    // ★修正: currentHiraChunkを使用
     const futureHiragana = remainingHiragana.substring(currentHiraChunk.length);
     const futureRomaji = generateFullRomajiDisplay(futureHiragana);
     futureRomaji.split('').forEach(char => {
@@ -148,26 +150,19 @@ function updateRomajiDisplay() {
     });
 }
 
+// ★★★ 修正点：逆算ロジックを廃止し、記憶しておいたチャンク長を使用 ★★★
 function completeChunk() {
-    let chunkLength = 1;
-    if (remainingHiragana.startsWith('っ')) {
-        chunkLength = 1;
-    } else {
-        for (const hira in romajiMap) {
-            if (romajiMap[hira].includes(currentTypedRomaji)) {
-                chunkLength = hira.length;
-                break;
-            }
-        }
-    }
+    // 安全策：もしcurrentHiraChunkが空なら強制的に1文字進める
+    const chunkLength = currentHiraChunk.length > 0 ? currentHiraChunk.length : 1;
+    
     remainingHiragana = remainingHiragana.substring(chunkLength);
     
-    // ▼▼▼ 修正点：戻り値で「単語が完了したか」を返す ▼▼▼
+    // 単語が完了したかどうかをチェックして返す
     const isWordComplete = (remainingHiragana.length === 0);
     prepareNextChunk();
     return isWordComplete;
-    // ▲▲▲ ここまで ▲▲▲
 }
+// ▲▲▲ ここまで ▲▲▲
 
 function prepareNextChunk() {
     currentTypedRomaji = '';
@@ -186,8 +181,12 @@ function prepareNextChunk() {
         chooseNewQuestion();
         return;
     }
+    
+    // ★★★ 修正点：ここでチャンクを決定し、グローバル変数に保存する ★★★
     let chunk = remainingHiragana.substring(0, 2);
     if (!romajiMap[chunk]) chunk = remainingHiragana.substring(0, 1);
+    
+    // 特殊な「っ」と「ん」の処理
     if (chunk === 'っ') {
         let nextChunk = remainingHiragana.substring(1, 3);
         let nextOptions = romajiMap[nextChunk];
@@ -195,10 +194,23 @@ function prepareNextChunk() {
             nextChunk = remainingHiragana.substring(1, 2);
             nextOptions = romajiMap[nextChunk];
         }
+        // 「っ」の次は子音を重ねる
         pendingRomajiOptions = nextOptions ? nextOptions.map(opt => opt[0]) : [];
+    } else if (chunk === 'ん') {
+        const nextHira = remainingHiragana[1];
+        if (nextHira && 'あいうえおやゆよなにぬねの'.includes(nextHira)) {
+            pendingRomajiOptions = ["nn", "n'"];
+        } else {
+            pendingRomajiOptions = ["n", "n'", "nn"];
+        }
     } else {
         pendingRomajiOptions = [...(romajiMap[chunk] || [])];
     }
+    
+    // 決定したチャンクを保存
+    currentHiraChunk = chunk;
+    // ▲▲▲ ここまで ▲▲▲
+
     updateRomajiDisplay();
 }
 
@@ -249,19 +261,15 @@ function handleKeyPress(e) {
             completeChunk();
         }
     } else {
-        // ▼▼▼ 修正点：単語完了時はリターンする ▼▼▼
+        // 「ん」の自動確定ロジック
         if (pendingRomajiOptions.includes(currentTypedRomaji)) {
             const isWordComplete = completeChunk();
             if (isWordComplete) {
-                // 単語が完了した場合、このキー入力は「消費された」とみなして終了する。
-                // 再帰呼び出しを行わないことで、次の単語への誤入力判定を防ぐ。
-                return;
+                return; // 単語完了時は再帰呼び出ししない
             }
-            // 単語がまだ続いている場合は、次の文字として再判定を試みる
-            handleKeyPress(e);
+            handleKeyPress(e); // 次の文字として再判定
             return;
         }
-        // ▲▲▲ ここまで ▲▲▲
         
         playSound(sounds.error);
         combo = 0;
@@ -325,11 +333,22 @@ function returnToStartScreen() {
 }
 
 function startGame(time) {
+    // ★★★ 修正点：データ読み込み待ちのチェックを追加 ★★★
+    if (!allQuizData || allQuizData.length === 0) {
+        alert("問題データを読み込んでいます。少々お待ちください。");
+        return;
+    }
+    // ▲▲▲ ここまで ▲▲▲
+
     timeLimit = time;
     currentGameTime = time;
     score = 0; combo = 0; maxCombo = 0;
     totalTyped = 0; correctTyped = 0;
     isTimerActive = false;
+    
+    // 前回のタイマーが残っていたら消す
+    if (timerInterval) clearInterval(timerInterval);
+
     scoreDisplay.textContent = 'SCORE: 0';
     comboDisplay.textContent = '';
     highscoreDisplay.style.display = 'none';
@@ -349,6 +368,7 @@ function startGame(time) {
 
 function endGame() {
     clearInterval(timerInterval);
+    timerInterval = null; // タイマーIDをクリア
     clearTimeout(tabPressTimer);
     tabPressTimer = null;
     document.removeEventListener('keydown', handleKeyPress);
@@ -366,9 +386,7 @@ function endGame() {
     gameScreen.style.display = 'none';
     resultsScreen.style.display = 'block';
     
-    // ゲスト対応ロジック
     if (currentUser) {
-        // ログインユーザー
         loggedInActions.style.display = 'block';
         guestScoreForm.style.display = 'none';
         currentUser.getIdToken(true).then(idToken => {
@@ -377,12 +395,12 @@ function endGame() {
                 timeMode: timeLimit,
                 score: finalScore
             });
-        });
+        }).catch(error => console.error("IDトークンの取得に失敗:", error));
     } else {
-        // ゲストユーザー
         loggedInActions.style.display = 'none';
         guestScoreForm.style.display = 'block';
         
+        // イベントリスナーの重複登録を防ぐため、onclickプロパティを使用
         submitGuestScoreBtn.onclick = () => {
             const name = guestNameInput.value.trim();
             if (name) {
