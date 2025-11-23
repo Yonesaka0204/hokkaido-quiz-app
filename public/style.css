@@ -22,6 +22,7 @@ body {
     width: 90%;
     max-width: 550px;
     animation: fadeInUp 0.6s ease-out forwards;
+    position: relative;
 }
 
 h1, h2 {
@@ -53,6 +54,7 @@ hr {
     font-size: 1.1rem;
 }
 
+/* --- ボタンのスタイル (棒状デザイン) --- */
 button,
 .option-btn,
 .auth-button {
@@ -70,6 +72,8 @@ button,
     box-sizing: border-box;
     transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    text-decoration: none; /* リンク用 */
+    text-align: center;
 }
 
 button:hover,
@@ -85,6 +89,17 @@ button:active,
 .auth-button:active {
     transform: translateY(0px);
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* マイページ・ランキング用の横並びコンテナ */
+.menu-row {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+.auth-button.half-width {
+    width: 100%;
+    margin-top: 0;
 }
 
 .option-btn {
@@ -169,7 +184,8 @@ button:disabled {
 }
 
 #answer-input,
-.auth-input {
+.auth-input,
+.simple-input {
     display: block;
     width: 100%;
     box-sizing: border-box;
@@ -181,8 +197,17 @@ button:disabled {
     margin-bottom: 1rem;
 }
 
+/* ゲスト名の入力欄用（少し調整） */
+.simple-input {
+    width: 150px;
+    display: inline-block;
+    margin-bottom: 0;
+    margin-left: 0.5rem;
+}
+
 #answer-input:focus,
-.auth-input:focus {
+.auth-input:focus,
+.simple-input:focus {
     outline: none;
     border-color: #007bff;
 }
@@ -203,23 +228,6 @@ button:disabled {
 
 .secondary-btn:hover {
     background-color: #5a6268;
-}
-
-.auth-button {
-    display: inline-block;
-    padding: 0.8rem 1.5rem;
-    text-decoration: none;
-    background-color: #007bff;
-    color: white;
-    border-radius: 5px;
-    border: none;
-    cursor: pointer;
-}
-
-.auth-section {
-    padding: 1rem;
-    border: 1px solid #eee;
-    border-radius: 8px;
 }
 
 .status-card {
@@ -353,6 +361,9 @@ button:disabled {
     border: 2px solid #3498db;
     cursor: pointer;
     transition: background-color 0.2s, color 0.2s;
+    /* 修正：ボタンのスタイルを上書きしないように */
+    margin-top: 0;
+    box-shadow: none;
 }
 .pagination-btn:hover {
     background-color: #3498db;
@@ -610,16 +621,6 @@ input:focus::placeholder, textarea:focus::placeholder { color: transparent; }
     color: #9b59b6;
 }
 
-.menu-row {
-    display: flex;
-    gap: 1rem; /* ボタン間のスペース */
-    margin-top: 1.5rem;
-}
-.auth-button.half-width {
-    width: 100%; /* flexの子要素として幅を均等に分けるため */
-    margin-top: 0; /* 親要素のmarginを適用するためリセット */
-}
-
 .ranking-box.flick-ranking h2 {
     border-bottom-color: #e67e22;
 }
@@ -628,33 +629,9 @@ input:focus::placeholder, textarea:focus::placeholder { color: transparent; }
 }
 
 /* --- ヘルプボタン --- */
+/* 通常時のコンテナはrelativeにする */
 .container {
-    position: relative; /* ヘルプボタンの配置基準 */
-}
-
-.help-icon {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    background-color: #95a5a6;
-    color: white;
-    border: none;
-    font-weight: bold;
-    font-size: 1.2rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    margin: 0; /* 既存のボタンスタイルをリセット */
-    box-shadow: none;
-    transition: background-color 0.2s;
-}
-.help-icon:hover {
-    background-color: #7f8c8d;
+    position: relative;
 }
 
 /* --- チュートリアルモーダル --- */
@@ -741,161 +718,7 @@ input:focus::placeholder, textarea:focus::placeholder { color: transparent; }
     line-height: 1.5;
 }
 
-/* --- 新トップページ（ログアウト時）のデザイン --- */
-
-.guest-section {
-    background-color: #fff;
-    padding-bottom: 1.5rem;
-    border-bottom: 2px solid #f0f0f0;
-    margin-bottom: 1.5rem;
-}
-
-.section-title {
-    font-size: 1.2rem;
-    color: #555;
-    margin-bottom: 1rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.section-title::before, .section-title::after {
-    content: '';
-    display: block;
-    width: 30px;
-    height: 1px;
-    background-color: #ddd;
-    margin: 0 10px;
-}
-
-.guest-name-box {
-    margin-bottom: 1.5rem;
-    font-size: 1.1rem;
-}
-.simple-input {
-    padding: 0.5rem;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-size: 1rem;
-    width: 150px;
-    text-align: center;
-    margin-left: 0.5rem;
-}
-
-/* モード選択ボタン（グリッドレイアウト） */
-.mode-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-}
-
-.mode-card {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s;
-    color: white;
-    height: 100px;
-    box-shadow: 0 3px 6px rgba(0,0,0,0.1);
-    margin-top: 0; /* デフォルトのmarginを打ち消し */
-}
-.mode-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 5px 10px rgba(0,0,0,0.2);
-}
-.mode-card.green { background: linear-gradient(135deg, #2ecc71, #27ae60); }
-.mode-card.purple { background: linear-gradient(135deg, #9b59b6, #8e44ad); }
-
-.mode-icon {
-    font-size: 2rem;
-    margin-bottom: 0.3rem;
-}
-.mode-name {
-    font-weight: bold;
-    font-size: 1rem;
-    line-height: 1.3;
-}
-
-/* マルチプレイ参加ボックス */
-.multi-join-box {
-    background-color: #f8f9fa;
-    padding: 1rem;
-    border-radius: 8px;
-    border: 1px solid #e9ecef;
-}
-.multi-join-box p {
-    margin: 0 0 0.5rem 0;
-    font-size: 0.9rem;
-    color: #666;
-    font-weight: bold;
-}
-.join-input-group {
-    display: flex;
-    justify-content: center;
-    gap: 0.5rem;
-}
-.join-input-group input {
-    width: 120px;
-    margin: 0;
-}
-.small-btn {
-    padding: 0.5rem 1rem;
-    font-size: 1rem;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-.small-btn.blue { background-color: #3498db; }
-.small-btn.blue:hover { background-color: #2980b9; }
-
-
-/* ログインエリア */
-.login-section {
-    text-align: center;
-}
-.login-desc {
-    color: #999;
-    font-size: 0.9rem;
-    margin-bottom: 0.8rem;
-}
-.login-buttons {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 1rem;
-}
-.text-link {
-    color: #007bff;
-    text-decoration: none;
-    font-weight: bold;
-    font-size: 1rem;
-}
-.text-link:hover { text-decoration: underline; }
-.separator { color: #ddd; }
-
-.ranking-link {
-    display: inline-block;
-    color: #f39c12;
-    text-decoration: none;
-    font-weight: bold;
-    border: 1px solid #f39c12;
-    padding: 0.4rem 1rem;
-    border-radius: 20px;
-    font-size: 0.9rem;
-    transition: all 0.2s;
-}
-.ranking-link:hover {
-    background-color: #f39c12;
-    color: white;
-}
-
-/* ▼▼▼ 追加：地図表示エリア ▼▼▼ */
+/* ▼▼▼ 地図表示エリア ▼▼▼ */
 #map-container {
     margin-top: 1.5rem;
     width: 100%;
