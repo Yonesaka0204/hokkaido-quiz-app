@@ -30,27 +30,8 @@ let allQuizData = [], currentGameTime = 60, timerInterval = null, isTimerActive 
 let currentQuestion = null;
 let score = 0, combo = 0, maxCombo = 0;
 let previousInput = '';
-let validationTimer = null;
 const socket = io();
 let currentUser = null;
-
-// 許容する中間文字のマップ（小文字、濁点、半濁点に対応）
-const validIntermediateMap = {
-    // 小さい文字 (拗音・促音)
-    'ぁ': 'あ', 'ぃ': 'い', 'ぅ': 'う', 'ぇ': 'え', 'ぉ': 'お',
-    'っ': 'つ',
-    'ゃ': 'や', 'ゅ': 'ゆ', 'ょ': 'よ',
-    
-    // 濁点 (Dakuten)
-    'が': 'か', 'ぎ': 'き', 'ぐ': 'く', 'げ': 'け', 'ご': 'こ',
-    'ざ': 'さ', 'じ': 'し', 'ず': 'す', 'ぜ': 'せ', 'ぞ': 'そ',
-    'だ': 'た', 'ぢ': 'ち', 'づ': 'つ', 'で': 'て', 'ど': 'と',
-    'ば': 'は', 'び': 'ひ', 'ぶ': 'ふ', 'べ': 'へ', 'ぼ': 'ほ',
-    'ヴ': 'う', 
-    
-    // 半濁点 (Handakuten)
-    'ぱ': 'は', 'ぴ': 'ひ', 'ぷ': 'ふ', 'ぺ': 'へ', 'ぽ': 'ほ'
-};
 
 // --- スコアリング ---
 function getComboMultiplier(c) {
@@ -61,11 +42,6 @@ function getComboMultiplier(c) {
 
 // --- ゲームロジック ---
 function chooseNewQuestion() {
-    if (validationTimer) {
-        clearTimeout(validationTimer);
-        validationTimer = null;
-    }
-
     const randomIndex = Math.floor(Math.random() * allQuizData.length);
     currentQuestion = allQuizData[randomIndex];
     kanjiDisplay.textContent = currentQuestion.question;
@@ -77,35 +53,34 @@ function chooseNewQuestion() {
     updateInputFeedback('');
 }
 
+// 入力状況の視覚フィードバックのみ行う（判定はしない）
 function updateInputFeedback(currentValue) {
     inputFeedback.innerHTML = '';
     const answer = currentQuestion.answer;
-    for (let i = 0; i < answer.length; i++) {
+    
+    // 入力された文字を表示
+    // 正解と一致している部分は黒(correct)、違う部分はグレー(untyped)などで表示
+    for (let i = 0; i < Math.max(answer.length, currentValue.length); i++) {
         const span = document.createElement('span');
-        span.textContent = answer[i];
         
-        // 入力済み文字の判定
         if (i < currentValue.length) {
-            if (currentValue[i] === answer[i]) {
-                span.className = 'correct';
+            // ユーザーが入力した文字がある場合
+            span.textContent = currentValue[i];
+            if (i < answer.length && currentValue[i] === answer[i]) {
+                span.className = 'correct'; // 合っている文字
             } else {
-                // 中間文字マップを使って判定（変換待ち状態）
-                const targetChar = answer[i];
-                const inputChar = currentValue[i];
-                if (validIntermediateMap[targetChar] === inputChar) {
-                    span.className = 'untyped'; 
-                } else {
-                    span.className = 'untyped'; 
-                }
+                span.className = 'untyped'; // 間違っている文字（まだペナルティではない）
             }
         } else {
-            span.className = 'untyped';
+            // 未入力部分は何も表示しない（既存デザインを踏襲）
         }
         inputFeedback.appendChild(span);
     }
 }
 
+// 入力イベント（文字を打っている最中の処理）
 function handleInput() {
+    // 最初の入力でタイマーを開始
     if (!isTimerActive && allQuizData.length > 0) {
         isTimerActive = true;
         timerInterval = setInterval(() => {
@@ -115,120 +90,61 @@ function handleInput() {
         }, 1000);
     }
     
-    clearTimeout(validationTimer);
     const currentValue = flickInput.value;
-    
-    // 削除キー対応など（大幅に文字が減った場合）
-    const diff = currentValue.length - previousInput.length;
-    if (diff > 1) {
-        // ペーストなどで一気に増えた場合は不正とみなし戻す（または許容せずリセット）
-        // ここでは簡易的にリセットせず、判定へ進むが、
-        // 前回のバグ修正のため、まずは単純なシェイクで防ぐ
-        flickInput.value = previousInput;
-        inputFeedback.classList.add('shake-animation');
-        setTimeout(() => inputFeedback.classList.remove('shake-animation'), 200);
-        return;
+    updateInputFeedback(currentValue);
+    previousInput = currentValue;
+}
+
+// ★★★ Enterキー（改行）が押された時の判定処理 ★★★
+function handleKeydown(e) {
+    // Enterキーが押されたら判定を実行
+    if (e.key === 'Enter') {
+        e.preventDefault(); // 改行文字の挿入を防ぐ
+        checkAnswer();
     }
+}
 
-    const validate = () => {
-        const value = flickInput.value;
-        const answer = currentQuestion.answer;
+function checkAnswer() {
+    const value = flickInput.value;
+    const answer = currentQuestion.answer;
 
-        // ★★★ 修正点：完全一致だけでなく、正解で始まっている場合もOKとする（引き継ぎ処理） ★★★
-        if (value.startsWith(answer)) {
-            // 正解！
-            combo++;
-            if (combo > maxCombo) maxCombo = combo;
-            
-            const comboMultiplier = getComboMultiplier(combo);
-            score += Math.round(100 * comboMultiplier);
-            
-            scoreDisplay.textContent = score;
-            comboDisplay.textContent = combo;
-            
-            // 次の問題へ
-            chooseNewQuestion();
-
-            // ★★★ 重要：余分に入力された文字（次の問題の頭文字）を引き継ぐ ★★★
-            // 例: input="しままきむらべ", answer="しままきむら" -> remainder="べ"
-            const remainder = value.substring(answer.length);
-            if (remainder.length > 0) {
-                flickInput.value = remainder;
-                previousInput = remainder;
-                updateInputFeedback(remainder);
-                
-                // 引き継いだ文字に対しても即座に判定を行う（再帰呼び出しだとループの危険があるためタイマーで逃がす）
-                // ただし、ここでの判定は視覚更新だけで十分な場合が多い。
-                // もし「べ」だけで次の問題も正解（1文字の地名など）の場合は、次の入力イベントで判定される。
-            }
-            
-            return; // 処理終了
-        }
-
-        // 2. 前方一致（入力途中）の場合
-        if (answer.startsWith(value)) {
-            if (value.length > previousInput.length) {
-                // 文字が進んだ
-                const comboMultiplier = getComboMultiplier(combo);
-                score += Math.round(100 * comboMultiplier);
-            }
-        } 
-        // 3. 不一致だが、変換途中（小文字・濁点・半濁点）の場合
-        else {
-            const mismatchIndex = value.length - 1;
-            
-            if (value.length <= answer.length && answer.startsWith(value.substring(0, mismatchIndex))) {
-                const targetChar = answer[mismatchIndex];
-                const inputChar = value[mismatchIndex];
-
-                // 中間文字マップで判定
-                if (validIntermediateMap[targetChar] === inputChar) {
-                    // ミス扱いせず、入力を継続させる
-                    scoreDisplay.textContent = score;
-                    comboDisplay.textContent = combo;
-                    updateInputFeedback(value);
-                    previousInput = value;
-                    return; 
-                }
-            }
-
-            // 4. 完全なミスの場合
-            score -= 100;
-            if (score < 0) score = 0;
-            combo = 0;
-            
-            flickInput.value = '';
-            previousInput = ''; 
-            
-            inputFeedback.classList.add('shake-animation');
-            setTimeout(() => inputFeedback.classList.remove('shake-animation'), 200);
-            
-            scoreDisplay.textContent = score;
-            comboDisplay.textContent = combo;
-            updateInputFeedback('');
-            return; 
-        }
-
+    if (value === answer) {
+        // --- 正解！ ---
+        combo++;
+        if (combo > maxCombo) maxCombo = combo;
+        
+        // スコア計算（文字数 × 100 × 倍率）
+        const comboMultiplier = getComboMultiplier(combo);
+        const points = Math.round(answer.length * 100 * comboMultiplier);
+        score += points;
+        
         scoreDisplay.textContent = score;
         comboDisplay.textContent = combo;
-        updateInputFeedback(flickInput.value);
-        previousInput = flickInput.value;
-    };
-
-    if (diff >= 1) {
-        validate();
+        
+        // 次の問題へ
+        chooseNewQuestion();
     } else {
-        validationTimer = setTimeout(validate, 150); 
+        // --- 不正解！ ---
+        score -= 100; // ペナルティ
+        if (score < 0) score = 0;
+        combo = 0; // コンボリセット
+        
+        scoreDisplay.textContent = score;
+        comboDisplay.textContent = combo;
+        
+        // シェイクアニメーションでミスを通知
+        inputFeedback.classList.add('shake-animation');
+        setTimeout(() => inputFeedback.classList.remove('shake-animation'), 200);
+        
+        // 入力をクリアして再挑戦させる
+        flickInput.value = '';
+        updateInputFeedback('');
     }
-    
-    updateInputFeedback(currentValue);
 }
 
 function startGame() {
     currentGameTime = 60; score = 0; combo = 0; maxCombo = 0;
     isTimerActive = false; previousInput = '';
-    
-    if (validationTimer) clearTimeout(validationTimer);
     
     timerDisplay.textContent = 60;
     scoreDisplay.textContent = 0;
@@ -239,12 +155,15 @@ function startGame() {
     resultsScreen.style.display = 'none';
     gameScreen.style.display = 'block';
     
+    // スマホキーボードで「改行」キーを「完了/実行」のような見た目にするヒント
+    flickInput.setAttribute('enterkeyhint', 'done');
+    flickInput.focus();
+    
     chooseNewQuestion();
 }
 
 function endGame() {
     clearInterval(timerInterval);
-    if (validationTimer) clearTimeout(validationTimer);
     
     flickInput.blur();
     finalScoreDisplay.textContent = score;
@@ -325,4 +244,7 @@ startBtn.addEventListener('click', handleStart);
 startBtn.addEventListener('touchstart', handleStart);
 playAgainBtn.addEventListener('click', handleStart);
 playAgainBtn.addEventListener('touchstart', handleStart);
-flickInput.addEventListener('input', handleInput);
+
+// イベントリスナーの登録
+flickInput.addEventListener('input', handleInput);     // 文字入力時の表示更新用
+flickInput.addEventListener('keydown', handleKeydown); // Enterキー判定用
