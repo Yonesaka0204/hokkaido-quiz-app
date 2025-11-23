@@ -184,74 +184,108 @@ body {
     margin-top: 1rem;
 }
 
-/* ▼▼▼ スマホ画面・キーボード表示時の強力なレイアウト調整 ▼▼▼ */
+/* ▼▼▼ スマホ画面・キーボード表示時の強力なレイアウト調整（修正版） ▼▼▼ */
 @media (max-width: 768px) {
-    /* Flexboxによる中央寄せを解除し、通常のブロック配置で上詰めにする */
+    /* 全体を上詰めにする設定 */
     body {
-        display: block; 
-        padding: 10px;
+        justify-content: flex-start;
+        padding-top: 5px; /* 余白を極限まで削る */
+        padding-bottom: 0;
+        display: flex;
+        flex-direction: column;
         height: auto;
-        min-height: auto; /* 100vhによる強制的な高さ確保を解除 */
+        min-height: 100vh;
     }
 
     .container {
-        width: auto;
-        max-width: 100%;
-        margin: 0;
-        padding: 10px 15px; /* 余白を削減 */
+        width: 98%;
+        padding: 0; /* コンテナの余白も削除 */
+        margin: 0 auto;
         box-shadow: none;
-        
-        /* アニメーションによる位置ずれを防ぐため解除 */
         transform: none !important;
         animation: none !important;
+        background: transparent; /* 背景を透過して圧迫感を減らす */
     }
 
-    /* スタッツバーをコンパクトに */
+    /* Flexboxを使って表示順序を入れ替える */
+    #game-screen {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+    }
+
+    /* 1. 【重要】問題表示エリアを「最上部」に持ってくる */
+    #game-area-wrapper {
+        order: 1;
+        margin-bottom: 0;
+        background: white;
+        border-radius: 8px;
+        padding: 10px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    /* 2. スタッツバー（時間・スコア）を「その下」に移動 */
     #stats-bar {
-        margin-bottom: 10px;
+        order: 2;
+        margin: 5px 0;
         padding: 5px;
-        font-size: 0.9rem;
+        font-size: 0.8rem;
+        background: rgba(255,255,255,0.8);
+        border: none;
+        display: flex;
+        justify-content: space-around; /* 横並びにして高さを節約 */
     }
     .stat-item span {
-        font-size: 1.1rem;
-        display: block;
+        font-size: 1rem;
+        display: inline; /* 改行させない */
+        margin-left: 5px;
     }
 
-    /* 問題表示エリアを大幅に圧縮 */
+    /* 問題表示エリアのデザイン調整 */
     #word-container {
-        padding: 10px;
-        min-height: auto; /* 固定高さを解除 */
-        margin-bottom: 5px;
+        padding: 5px;
+        margin-bottom: 0;
+        border: none;
+        box-shadow: none;
+        min-height: auto;
     }
     
-    /* 文字サイズを画面に収まるように小さく */
+    /* 文字サイズと行間の調整（見やすく、かつコンパクトに） */
     #kanji-display {
-        font-size: 1.8rem;
+        font-size: 2.4rem; /* 大きく見やすく */
+        line-height: 1.1;
         margin-bottom: 0;
     }
     #hiragana-display {
-        font-size: 1rem;
-        margin-bottom: 0.2rem;
+        font-size: 1.1rem;
+        margin-bottom: 5px;
+        color: #555;
     }
     #romaji-display {
-        font-size: 1.1rem;
-        padding: 0;
+        font-size: 1.4rem; /* 入力文字も大きく */
+        padding: 2px;
+        margin-top: 0;
+        background: #f0f0f0; /* 入力欄っぽく背景を付ける */
+        border-radius: 4px;
     }
 
-    /* スコア・コンボ表示も詰める */
-    #score-display {
-        font-size: 1.2rem;
-        margin-top: 5px;
-    }
+    /* コンボ表示 */
     #combo-display {
-        font-size: 1rem;
+        font-size: 1.2rem;
         height: 20px;
+        margin: 2px 0;
     }
 
-    /* ヒントを表示 */
+    /* 重複するスコア表示は消す（スタッツバーにあるため） */
+    #score-display {
+        display: none;
+    }
+
+    /* ヒント */
     .mobile-hint {
         display: block;
-        margin-top: 5px;
-        font-size: 0.8rem;
+        margin-top: 2px;
+        font-size: 0.7rem;
+        color: #aaa;
     }
 }
