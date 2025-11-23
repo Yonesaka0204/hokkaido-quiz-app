@@ -2,7 +2,6 @@
 
 /* --- 全体 --- */
 body {
-    /* 集中できるよう少し暗めの背景に */
     background-color: #e9ecef; 
 }
 
@@ -109,7 +108,6 @@ body {
     100% { transform: scale(1); }
 }
 
-/* ミスタイプ時のシェイクアニメーション */
 .shake-animation {
     animation: shake 0.2s ease-in-out;
 }
@@ -156,68 +154,50 @@ body {
     animation: fadeIn 1s ease-in-out;
 }
 
-/* --- バーチャルキーボード --- */
-#virtual-keyboard {
-    position: fixed;
-    bottom: 0;
+/* ▼▼▼ スマホ対応用スタイル ▼▼▼ */
+
+/* スマホでの入力用トラップ（見えないがフォーカス可能） */
+#mobile-input-trap {
+    position: absolute;
+    top: 0;
     left: 0;
-    right: 0;
-    padding: 5px;
-    background-color: #d1d5db;
-    display: none; /* デフォルトは非表示 */
-    flex-direction: column;
-    gap: 5px;
-    z-index: 100;
-    touch-action: manipulation; /* ダブルタップによるズームを防止 */
-}
-
-/* 画面幅が768px以下の時だけ表示 */
-@media (max-width: 768px) {
-    #virtual-keyboard.visible {
-        display: flex;
-    }
-    /* キーボードが表示される分、ゲーム画面の下に余白を作る */
-    body {
-        padding-bottom: 160px;
-    }
-}
-
-.keyboard-row {
-    display: flex;
-    justify-content: center;
-    gap: 5px;
-}
-
-.key {
-    height: 45px;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    z-index: 10; /* ゲーム画面の上に被せる */
+    cursor: text;
+    font-size: 16px; /* iOSでのズーム防止のため16px以上にする */
+    background: transparent;
     border: none;
-    border-radius: 5px;
-    background-color: #ffffff;
-    font-size: 1.2rem;
-    font-weight: bold;
-    color: #333;
-    width: 8vw; /* 画面幅に応じた相対的な幅を指定 */
-    max-width: 40px; /* PCなど画面が広い場合でもキーが大きくなりすぎないように */
-    padding: 0;
-    margin: 0 1px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    box-shadow: 0 2px 2px rgba(0,0,0,0.2);
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent; /* タップ時のハイライトを消す */
+    color: transparent;
 }
 
-.key:active {
-    background-color: #e2e8f0;
-    transform: translateY(1px);
-    box-shadow: 0 1px 1px rgba(0,0,0,0.2);
+#game-area-wrapper {
+    position: relative;
 }
 
-/* ▼▼▼ ここから追加 ▼▼▼ */
+/* PCではヒントを隠す */
+.mobile-hint {
+    display: none;
+    color: #999;
+    font-size: 0.9rem;
+    margin-top: 1rem;
+}
+
+/* スマホ画面のみ適用 */
+@media (max-width: 768px) {
+    .mobile-hint {
+        display: block;
+    }
+    /* キーボードが出た時のために下部余白を確保 */
+    body {
+        padding-bottom: 200px; 
+    }
+}
+
 .time-btn:disabled,
 .time-btn:disabled:hover {
-    background: #bdc3c7; /* グラデーションを上書きしてグレーに */
+    background: #bdc3c7; 
     cursor: not-allowed;
     transform: none;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);

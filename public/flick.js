@@ -34,7 +34,7 @@ let validationTimer = null;
 const socket = io();
 let currentUser = null;
 
-// ★★★ 修正: 許容する中間文字のマップ（小文字、濁点、半濁点に対応） ★★★
+// 許容する中間文字のマップ（小文字、濁点、半濁点に対応）
 const validIntermediateMap = {
     // 小さい文字 (拗音・促音)
     'ぁ': 'あ', 'ぃ': 'い', 'ぅ': 'う', 'ぇ': 'え', 'ぉ': 'お',
@@ -71,7 +71,7 @@ function chooseNewQuestion() {
     kanjiDisplay.textContent = currentQuestion.question;
     hiraganaDisplay.textContent = currentQuestion.answer;
     
-    // 入力欄と変数を確実にリセット
+    // 入力欄と変数をリセット
     flickInput.value = '';
     previousInput = '';
     updateInputFeedback('');
@@ -89,11 +89,10 @@ function updateInputFeedback(currentValue) {
             if (currentValue[i] === answer[i]) {
                 span.className = 'correct';
             } else {
-                // ★★★ 修正: 中間文字マップを使って判定 ★★★
+                // 中間文字マップを使って判定（変換待ち状態）
                 const targetChar = answer[i];
                 const inputChar = currentValue[i];
                 if (validIntermediateMap[targetChar] === inputChar) {
-                    // 変換待ち（例：「ぽ」に対して「ほ」が入力されている）状態
                     span.className = 'untyped'; 
                 } else {
                     span.className = 'untyped'; 
@@ -119,8 +118,12 @@ function handleInput() {
     clearTimeout(validationTimer);
     const currentValue = flickInput.value;
     
+    // 削除キー対応など（大幅に文字が減った場合）
     const diff = currentValue.length - previousInput.length;
     if (diff > 1) {
+        // ペーストなどで一気に増えた場合は不正とみなし戻す（または許容せずリセット）
+        // ここでは簡易的にリセットせず、判定へ進むが、
+        // 前回のバグ修正のため、まずは単純なシェイクで防ぐ
         flickInput.value = previousInput;
         inputFeedback.classList.add('shake-animation');
         setTimeout(() => inputFeedback.classList.remove('shake-animation'), 200);
@@ -131,8 +134,9 @@ function handleInput() {
         const value = flickInput.value;
         const answer = currentQuestion.answer;
 
-        // 1. 完全一致（正解）の場合
-        if (value === answer) {
+        // ★★★ 修正点：完全一致だけでなく、正解で始まっている場合もOKとする（引き継ぎ処理） ★★★
+        if (value.startsWith(answer)) {
+            // 正解！
             combo++;
             if (combo > maxCombo) maxCombo = combo;
             
@@ -142,13 +146,29 @@ function handleInput() {
             scoreDisplay.textContent = score;
             comboDisplay.textContent = combo;
             
+            // 次の問題へ
             chooseNewQuestion();
-            return; 
+
+            // ★★★ 重要：余分に入力された文字（次の問題の頭文字）を引き継ぐ ★★★
+            // 例: input="しままきむらべ", answer="しままきむら" -> remainder="べ"
+            const remainder = value.substring(answer.length);
+            if (remainder.length > 0) {
+                flickInput.value = remainder;
+                previousInput = remainder;
+                updateInputFeedback(remainder);
+                
+                // 引き継いだ文字に対しても即座に判定を行う（再帰呼び出しだとループの危険があるためタイマーで逃がす）
+                // ただし、ここでの判定は視覚更新だけで十分な場合が多い。
+                // もし「べ」だけで次の問題も正解（1文字の地名など）の場合は、次の入力イベントで判定される。
+            }
+            
+            return; // 処理終了
         }
 
         // 2. 前方一致（入力途中）の場合
         if (answer.startsWith(value)) {
             if (value.length > previousInput.length) {
+                // 文字が進んだ
                 const comboMultiplier = getComboMultiplier(combo);
                 score += Math.round(100 * comboMultiplier);
             }
@@ -158,10 +178,10 @@ function handleInput() {
             const mismatchIndex = value.length - 1;
             
             if (value.length <= answer.length && answer.startsWith(value.substring(0, mismatchIndex))) {
-                const targetChar = answer[mismatchIndex]; // 正解の文字（例：ぽ）
-                const inputChar = value[mismatchIndex];   // 入力文字（例：ほ）
+                const targetChar = answer[mismatchIndex];
+                const inputChar = value[mismatchIndex];
 
-                // ★★★ 修正: 中間文字マップで判定 ★★★
+                // 中間文字マップで判定
                 if (validIntermediateMap[targetChar] === inputChar) {
                     // ミス扱いせず、入力を継続させる
                     scoreDisplay.textContent = score;

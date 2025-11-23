@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>北海道地名タイピング</title>
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/typing-style.css">
@@ -26,13 +26,20 @@
             <div id="kpm" class="stat-item">KPM: <span>0</span></div>
             <div id="accuracy" class="stat-item">正確率: <span>100%</span></div>
         </div>
-        <div id="word-container">
-            <div id="kanji-display"></div>
-            <div id="hiragana-display"></div>
-            <div id="romaji-display"></div>
+        
+        <div id="game-area-wrapper">
+            <div id="word-container">
+                <div id="kanji-display"></div>
+                <div id="hiragana-display"></div>
+                <div id="romaji-display"></div>
+            </div>
+            <div id="combo-display" class="combo-animation"></div>
+            <div id="score-display">SCORE: 0</div>
+            
+            <p class="mobile-hint">画面をタップしてキーボードを表示</p>
         </div>
-        <div id="combo-display" class="combo-animation"></div>
-        <div id="score-display">SCORE: 0</div>
+
+        <input type="text" id="mobile-input-trap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="url">
     </div>
 
     <div id="results-screen" class="container" style="display: none;">
@@ -68,41 +75,6 @@
         <div class="result-actions" id="logged-in-actions">
             <button id="play-again-btn">もう一度プレイ</button>
             <a href="/" class="secondary-btn">トップページに戻る</a>
-        </div>
-    </div>
-
-    <div id="virtual-keyboard">
-        <div class="keyboard-row">
-            <button class="key" data-key="q">q</button>
-            <button class="key" data-key="w">w</button>
-            <button class="key" data-key="e">e</button>
-            <button class="key" data-key="r">r</button>
-            <button class="key" data-key="t">t</button>
-            <button class="key" data-key="y">y</button>
-            <button class="key" data-key="u">u</button>
-            <button class="key" data-key="i">i</button>
-            <button class="key" data-key="o">o</button>
-            <button class="key" data-key="p">p</button>
-        </div>
-        <div class="keyboard-row">
-            <button class="key" data-key="a">a</button>
-            <button class="key" data-key="s">s</button>
-            <button class="key" data-key="d">d</button>
-            <button class="key" data-key="f">f</button>
-            <button class="key" data-key="g">g</button>
-            <button class="key" data-key="h">h</button>
-            <button class="key" data-key="j">j</button>
-            <button class="key" data-key="k">k</button>
-            <button class="key" data-key="l">l</button>
-        </div>
-        <div class="keyboard-row">
-            <button class="key" data-key="z">z</button>
-            <button class="key" data-key="x">x</button>
-            <button class="key" data-key="c">c</button>
-            <button class="key" data-key="v">v</button>
-            <button class="key" data-key="b">b</button>
-            <button class="key" data-key="n">n</button>
-            <button class="key" data-key="m">m</button>
         </div>
     </div>
 

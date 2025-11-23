@@ -15,7 +15,7 @@ const romajiDisplay = document.getElementById('romaji-display');
 const scoreDisplay = document.getElementById('score-display');
 const comboDisplay = document.getElementById('combo-display');
 const wordContainer = document.getElementById('word-container');
-const virtualKeyboard = document.getElementById('virtual-keyboard');
+const mobileInputTrap = document.getElementById('mobile-input-trap'); // 追加
 const finalScoreDisplay = document.getElementById('final-score');
 const maxComboDisplay = document.getElementById('max-combo');
 const avgKpmDisplay = document.getElementById('avg-kpm');
@@ -47,7 +47,7 @@ function playSound(sound) {
 // --- グローバル変数 ---
 let allQuizData = [], currentGameTime = 0, timeLimit = 0, timerInterval = null, isTimerActive = false;
 let currentQuestion = null, remainingHiragana = '', pendingRomajiOptions = [], currentTypedRomaji = '', fullRomajiToDisplay = '';
-let currentHiraChunk = ''; // ★★★ 修正点：現在入力中のひらがなを記憶する変数 ★★★
+let currentHiraChunk = ''; 
 let score = 0, combo = 0, maxCombo = 0, totalTyped = 0, correctTyped = 0;
 const socket = io();
 let currentUser = null;
@@ -139,8 +139,6 @@ function updateRomajiDisplay() {
         romajiDisplay.appendChild(span);
     });
     
-    // 残りの文字の表示（現在のチャンクを除いた部分）
-    // ★修正: currentHiraChunkを使用
     const futureHiragana = remainingHiragana.substring(currentHiraChunk.length);
     const futureRomaji = generateFullRomajiDisplay(futureHiragana);
     futureRomaji.split('').forEach(char => {
@@ -150,19 +148,13 @@ function updateRomajiDisplay() {
     });
 }
 
-// ★★★ 修正点：逆算ロジックを廃止し、記憶しておいたチャンク長を使用 ★★★
 function completeChunk() {
-    // 安全策：もしcurrentHiraChunkが空なら強制的に1文字進める
     const chunkLength = currentHiraChunk.length > 0 ? currentHiraChunk.length : 1;
-    
     remainingHiragana = remainingHiragana.substring(chunkLength);
-    
-    // 単語が完了したかどうかをチェックして返す
     const isWordComplete = (remainingHiragana.length === 0);
     prepareNextChunk();
     return isWordComplete;
 }
-// ▲▲▲ ここまで ▲▲▲
 
 function prepareNextChunk() {
     currentTypedRomaji = '';
@@ -182,11 +174,9 @@ function prepareNextChunk() {
         return;
     }
     
-    // ★★★ 修正点：ここでチャンクを決定し、グローバル変数に保存する ★★★
     let chunk = remainingHiragana.substring(0, 2);
     if (!romajiMap[chunk]) chunk = remainingHiragana.substring(0, 1);
     
-    // 特殊な「っ」と「ん」の処理
     if (chunk === 'っ') {
         let nextChunk = remainingHiragana.substring(1, 3);
         let nextOptions = romajiMap[nextChunk];
@@ -194,7 +184,6 @@ function prepareNextChunk() {
             nextChunk = remainingHiragana.substring(1, 2);
             nextOptions = romajiMap[nextChunk];
         }
-        // 「っ」の次は子音を重ねる
         pendingRomajiOptions = nextOptions ? nextOptions.map(opt => opt[0]) : [];
     } else if (chunk === 'ん') {
         const nextHira = remainingHiragana[1];
@@ -207,10 +196,7 @@ function prepareNextChunk() {
         pendingRomajiOptions = [...(romajiMap[chunk] || [])];
     }
     
-    // 決定したチャンクを保存
     currentHiraChunk = chunk;
-    // ▲▲▲ ここまで ▲▲▲
-
     updateRomajiDisplay();
 }
 
@@ -232,8 +218,10 @@ function updateStats() {
     accuracyDisplay.textContent = `${accuracy}%`;
 }
 
-function handleKeyPress(e) {
-    if(e.preventDefault) e.preventDefault();
+// PC用・スマホ用共通の文字判定ロジック
+function processInputChar(key) {
+    if (!"abcdefghijklmnopqrstuvwxyz'-".includes(key)) return;
+    
     if (!isTimerActive) {
         isTimerActive = true;
         timerInterval = setInterval(() => {
@@ -243,8 +231,7 @@ function handleKeyPress(e) {
             if (currentGameTime <= 0) endGame();
         }, 1000);
     }
-    const key = e.key.toLowerCase();
-    if (!"abcdefghijklmnopqrstuvwxyz'-".includes(key)) return;
+
     totalTyped++;
     const nextTyped = currentTypedRomaji + key;
     const possibleOptions = pendingRomajiOptions.filter(opt => opt.startsWith(nextTyped));
@@ -261,13 +248,12 @@ function handleKeyPress(e) {
             completeChunk();
         }
     } else {
-        // 「ん」の自動確定ロジック
         if (pendingRomajiOptions.includes(currentTypedRomaji)) {
             const isWordComplete = completeChunk();
             if (isWordComplete) {
-                return; // 単語完了時は再帰呼び出ししない
+                return; 
             }
-            handleKeyPress(e); // 次の文字として再判定
+            processInputChar(key); // 次の文字として再判定
             return;
         }
         
@@ -282,6 +268,13 @@ function handleKeyPress(e) {
     }
     updateRomajiDisplay();
     updateStats();
+}
+
+// PCキーボードイベントハンドラ
+function handleKeyPress(e) {
+    if(e.preventDefault) e.preventDefault();
+    const key = e.key.toLowerCase();
+    processInputChar(key);
 }
 
 function handleEscapeKey(e) {
@@ -326,19 +319,33 @@ function returnToStartScreen() {
     document.removeEventListener('keydown', handleEscapeKey);
     document.removeEventListener('keydown', handleTabKeyDown);
     document.removeEventListener('keyup', handleTabKeyUp);
-    virtualKeyboard.classList.remove('visible');
     gameScreen.style.display = 'none';
     resultsScreen.style.display = 'none';
     startScreen.style.display = 'block';
 }
 
+// ▼▼▼ スマホ用：入力トラップの処理 ▼▼▼
+mobileInputTrap.addEventListener('input', (e) => {
+    const val = mobileInputTrap.value;
+    if (!val) return;
+    // 入力された最後の文字を取得して処理に回す
+    const char = val.slice(-1).toLowerCase();
+    processInputChar(char);
+    // 入力欄をクリア（常に空にしておく）
+    mobileInputTrap.value = '';
+});
+
+// 画面タップでフォーカスを強制
+gameScreen.addEventListener('click', () => {
+    mobileInputTrap.focus();
+});
+// ▲▲▲ ここまで ▲▲▲
+
 function startGame(time) {
-    // ★★★ 修正点：データ読み込み待ちのチェックを追加 ★★★
     if (!allQuizData || allQuizData.length === 0) {
         alert("問題データを読み込んでいます。少々お待ちください。");
         return;
     }
-    // ▲▲▲ ここまで ▲▲▲
 
     timeLimit = time;
     currentGameTime = time;
@@ -346,7 +353,6 @@ function startGame(time) {
     totalTyped = 0; correctTyped = 0;
     isTimerActive = false;
     
-    // 前回のタイマーが残っていたら消す
     if (timerInterval) clearInterval(timerInterval);
 
     scoreDisplay.textContent = 'SCORE: 0';
@@ -356,26 +362,35 @@ function startGame(time) {
     startScreen.style.display = 'none';
     resultsScreen.style.display = 'none';
     gameScreen.style.display = 'block';
-    virtualKeyboard.classList.add('visible');
+    
     chooseNewQuestion();
     updateStats();
     timerDisplay.textContent = currentGameTime;
+    
+    // PC用イベント
     document.addEventListener('keydown', handleKeyPress);
     document.addEventListener('keydown', handleEscapeKey);
     document.addEventListener('keydown', handleTabKeyDown);
     document.addEventListener('keyup', handleTabKeyUp);
+    
+    // スマホ用：開始と同時に入力欄にフォーカス
+    mobileInputTrap.value = '';
+    mobileInputTrap.focus();
 }
 
 function endGame() {
     clearInterval(timerInterval);
-    timerInterval = null; // タイマーIDをクリア
+    timerInterval = null;
     clearTimeout(tabPressTimer);
     tabPressTimer = null;
     document.removeEventListener('keydown', handleKeyPress);
     document.removeEventListener('keydown', handleEscapeKey);
     document.removeEventListener('keydown', handleTabKeyDown);
     document.removeEventListener('keyup', handleTabKeyUp);
-    virtualKeyboard.classList.remove('visible');
+    
+    // スマホキーボードを閉じる
+    mobileInputTrap.blur();
+    
     const finalScore = score;
     const finalKpm = timeLimit > 0 ? (correctTyped / timeLimit) * 60 : 0;
     const finalAccuracyRate = totalTyped > 0 ? correctTyped / totalTyped : 0;
@@ -400,7 +415,6 @@ function endGame() {
         loggedInActions.style.display = 'none';
         guestScoreForm.style.display = 'block';
         
-        // イベントリスナーの重複登録を防ぐため、onclickプロパティを使用
         submitGuestScoreBtn.onclick = () => {
             const name = guestNameInput.value.trim();
             if (name) {
@@ -443,12 +457,6 @@ if (flickModeBtn) {
 playAgainBtn.addEventListener('click', () => {
     resultsScreen.style.display = 'none';
     startScreen.style.display = 'block';
-});
-
-virtualKeyboard.addEventListener('click', (e) => {
-    if (e.target.classList.contains('key')) {
-        handleKeyPress({ key: e.target.dataset.key, preventDefault: () => {} });
-    }
 });
 
 auth.onAuthStateChanged(user => {
