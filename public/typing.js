@@ -1,4 +1,4 @@
-// public/typing.js (ゲストプレイ対応版)
+// public/typing.js (「ん」バグ修正版)
 
 // --- DOM要素の取得 ---
 const startScreen = document.getElementById('start-screen');
@@ -82,7 +82,7 @@ const romajiMap = {
     'ぢゃ': ['dya'], 'ぢゅ': ['dyu'], 'ぢょ': ['dyo'],
     'びゃ': ['bya'], 'びゅ': ['byu'], 'びょ': ['byo'],
     'ぴゃ': ['pya'], 'ぴゅ': ['pyu'], 'ぴょ': ['pyo'],
-    'ー': ['']
+    'ー': ['-']
 };
 
 // --- ゲームロジック ---
@@ -161,7 +161,12 @@ function completeChunk() {
         }
     }
     remainingHiragana = remainingHiragana.substring(chunkLength);
+    
+    // ▼▼▼ 修正点：戻り値で「単語が完了したか」を返す ▼▼▼
+    const isWordComplete = (remainingHiragana.length === 0);
     prepareNextChunk();
+    return isWordComplete;
+    // ▲▲▲ ここまで ▲▲▲
 }
 
 function prepareNextChunk() {
@@ -170,6 +175,7 @@ function prepareNextChunk() {
         playSound(sounds.complete);
         combo++;
         if (combo > maxCombo) maxCombo = combo;
+
         comboDisplay.textContent = `${combo} Combo`;
         if (combo > 0 && combo % 10 === 0) {
              playSound(sounds.combo);
@@ -230,6 +236,7 @@ function handleKeyPress(e) {
     totalTyped++;
     const nextTyped = currentTypedRomaji + key;
     const possibleOptions = pendingRomajiOptions.filter(opt => opt.startsWith(nextTyped));
+    
     if (possibleOptions.length > 0) {
         playSound(sounds.type);
         correctTyped++;
@@ -242,11 +249,20 @@ function handleKeyPress(e) {
             completeChunk();
         }
     } else {
+        // ▼▼▼ 修正点：単語完了時はリターンする ▼▼▼
         if (pendingRomajiOptions.includes(currentTypedRomaji)) {
-            completeChunk();
+            const isWordComplete = completeChunk();
+            if (isWordComplete) {
+                // 単語が完了した場合、このキー入力は「消費された」とみなして終了する。
+                // 再帰呼び出しを行わないことで、次の単語への誤入力判定を防ぐ。
+                return;
+            }
+            // 単語がまだ続いている場合は、次の文字として再判定を試みる
             handleKeyPress(e);
             return;
         }
+        // ▲▲▲ ここまで ▲▲▲
+        
         playSound(sounds.error);
         combo = 0;
         score -= 100;
@@ -350,9 +366,9 @@ function endGame() {
     gameScreen.style.display = 'none';
     resultsScreen.style.display = 'block';
     
-    // ▼▼▼ ゲスト対応のロジックを追加 ▼▼▼
+    // ゲスト対応ロジック
     if (currentUser) {
-        // ログインユーザー: 自動保存
+        // ログインユーザー
         loggedInActions.style.display = 'block';
         guestScoreForm.style.display = 'none';
         currentUser.getIdToken(true).then(idToken => {
@@ -363,12 +379,10 @@ function endGame() {
             });
         });
     } else {
-        // ゲストユーザー: 登録フォーム表示
-        loggedInActions.style.display = 'none'; // 通常のボタンを一時的に隠す
+        // ゲストユーザー
+        loggedInActions.style.display = 'none';
         guestScoreForm.style.display = 'block';
         
-        // イベントリスナーは1回だけ追加するため、onclickで上書きするか、removeEventListenerが必要
-        // 簡易的にonclickを使用
         submitGuestScoreBtn.onclick = () => {
             const name = guestNameInput.value.trim();
             if (name) {
@@ -376,7 +390,7 @@ function endGame() {
                     name: name,
                     score: finalScore,
                     timeMode: timeLimit,
-                    mode: 'typing' // ローマ字入力
+                    mode: 'typing'
                 });
                 alert('登録しました！');
                 guestScoreForm.style.display = 'none';
@@ -391,9 +405,9 @@ function endGame() {
             loggedInActions.style.display = 'block';
         };
     }
-    // ▲▲▲ ここまで ▲▲▲
 }
 
+// --- イベントリスナー設定 ---
 timeButtons.forEach(button => {
     button.addEventListener('click', () => {
         if (button.disabled) return;
@@ -402,32 +416,38 @@ timeButtons.forEach(button => {
     });
 });
 
-flickModeBtn.addEventListener('click', () => {
-    window.location.href = '/flick';
-});
+if (flickModeBtn) {
+    flickModeBtn.addEventListener('click', () => {
+        window.location.href = '/flick';
+    });
+}
 
 playAgainBtn.addEventListener('click', () => {
     resultsScreen.style.display = 'none';
     startScreen.style.display = 'block';
 });
+
 virtualKeyboard.addEventListener('click', (e) => {
     if (e.target.classList.contains('key')) {
         handleKeyPress({ key: e.target.dataset.key, preventDefault: () => {} });
     }
 });
+
 auth.onAuthStateChanged(user => {
     if (user) currentUser = user;
-    // 未ログイン時のリダイレクトを削除
 });
+
 socket.on('connect', () => {
     socket.emit('get-typing-data');
 });
+
 socket.on('typing-data', (data) => {
     allQuizData = data;
     timeButtons.forEach(b => {
-        if(b.id !== 'flick-mode-btn') b.disabled = false;
+        if (b.id !== 'flick-mode-btn') b.disabled = false;
     });
 });
+
 socket.on('typing-score-saved', ({ isNewHighscore, xpGained }) => {
     if (isNewHighscore) {
         highscoreDisplay.textContent = '🎉 ハイスコア更新！';
