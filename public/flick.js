@@ -1,4 +1,4 @@
-// public/flick.js (ハイブリッド判定版)
+// public/flick.js (ゲスト対応版)
 
 // --- DOM要素の取得 ---
 const startScreen = document.getElementById('start-screen');
@@ -18,12 +18,19 @@ const highscoreDisplay = document.getElementById('highscore-message');
 const xpMessage = document.getElementById('xp-message');
 const playAgainBtn = document.getElementById('play-again-btn');
 
+// ゲスト用要素
+const guestScoreForm = document.getElementById('guest-score-form');
+const guestNameInput = document.getElementById('guest-name');
+const submitGuestScoreBtn = document.getElementById('submit-guest-score-btn');
+const skipGuestScoreBtn = document.getElementById('skip-guest-score-btn');
+const loggedInActions = document.getElementById('logged-in-actions');
+
 // --- グローバル変数 ---
 let allQuizData = [], currentGameTime = 60, timerInterval = null, isTimerActive = false;
 let currentQuestion = null;
 let score = 0, combo = 0, maxCombo = 0;
 let previousInput = '';
-let validationTimer = null; // ▼▼▼ 判定遅延用のタイマーを追加 ▼▼▼
+let validationTimer = null;
 const socket = io();
 let currentUser = null;
 
@@ -48,7 +55,6 @@ function chooseNewQuestion() {
 function updateInputFeedback(currentValue) {
     inputFeedback.innerHTML = '';
     const answer = currentQuestion.answer;
-
     for (let i = 0; i < answer.length; i++) {
         const span = document.createElement('span');
         span.textContent = answer[i];
@@ -61,7 +67,6 @@ function updateInputFeedback(currentValue) {
     }
 }
 
-// ▼▼▼ 入力判定ロジックを全面的に刷新 ▼▼▼
 function handleInput() {
     if (!isTimerActive && allQuizData.length > 0) {
         isTimerActive = true;
@@ -71,75 +76,53 @@ function handleInput() {
             if (currentGameTime <= 0) endGame();
         }, 1000);
     }
-
-    clearTimeout(validationTimer); // 前回の判定タイマーをキャンセル
-
+    clearTimeout(validationTimer);
     const currentValue = flickInput.value;
     const diff = currentValue.length - previousInput.length;
-
-    // 予測変換・ペースト検知
     if (diff > 1) {
-        flickInput.value = ''; // 入力をリセット
-        previousInput = '';
+        flickInput.value = previousInput;
         inputFeedback.classList.add('shake-animation');
         setTimeout(() => inputFeedback.classList.remove('shake-animation'), 200);
-        updateInputFeedback('');
         return;
     }
-
-    // 正誤判定とスコア計算を行う関数
     const validate = () => {
-        const value = flickInput.value; // タイマー後の最新の値で判定
+        const value = flickInput.value;
         if (currentQuestion.answer.startsWith(value)) {
-            // 正しい入力が続いている場合
-            if (value.length > previousInput.length) { // 文字が増えた時だけスコア加算
+            if (value.length > previousInput.length) {
                 const comboMultiplier = getComboMultiplier(combo);
                 score += Math.round(100 * comboMultiplier);
             }
         } else {
-            // ミスタイプの場合
             score -= 100;
             if (score < 0) score = 0;
             combo = 0;
-            flickInput.value = ''; // 入力をリセット
+            flickInput.value = '';
             inputFeedback.classList.add('shake-animation');
             setTimeout(() => inputFeedback.classList.remove('shake-animation'), 200);
         }
-        
-        // UIの更新
         scoreDisplay.textContent = score;
         comboDisplay.textContent = combo;
         updateInputFeedback(flickInput.value);
-
-        // 1問正解の判定
         if (flickInput.value !== '' && flickInput.value === currentQuestion.answer) {
             combo++;
             if (combo > maxCombo) maxCombo = combo;
             comboDisplay.textContent = combo;
             chooseNewQuestion();
         }
-        
         previousInput = flickInput.value;
     };
-
-    // ハイブリッド判定ロジック
     if (diff >= 1) {
-        // 文字が「追加」された場合は即座に判定
         validate();
     } else {
-        // 文字が「変化」した（濁点など）または「削除」された場合は、少し待ってから判定
         validationTimer = setTimeout(validate, 150);
     }
-
-    // 画面の見た目だけは即座に更新
     updateInputFeedback(currentValue);
 }
-// ▲▲▲ ここまで ▲▲▲
 
 function startGame() {
     currentGameTime = 60; score = 0; combo = 0; maxCombo = 0;
     isTimerActive = false; previousInput = '';
-    clearTimeout(validationTimer); // タイマーをクリア
+    clearTimeout(validationTimer);
     timerDisplay.textContent = 60;
     scoreDisplay.textContent = 0;
     comboDisplay.textContent = 0;
@@ -149,8 +132,6 @@ function startGame() {
     resultsScreen.style.display = 'none';
     gameScreen.style.display = 'block';
     chooseNewQuestion();
-    // iOS端末でキーボードを確実に出すため、少し遅らせてフォーカスする
-    setTimeout(() => flickInput.focus(), 100);
 }
 
 function endGame() {
@@ -161,7 +142,10 @@ function endGame() {
     maxComboDisplay.textContent = maxCombo;
     gameScreen.style.display = 'none';
     resultsScreen.style.display = 'block';
+    
     if (currentUser) {
+        loggedInActions.style.display = 'block';
+        guestScoreForm.style.display = 'none';
         const xpGained = 20 + Math.floor(score / 200);
         xpMessage.textContent = `+${xpGained} XP を獲得しました！`;
         xpMessage.style.display = 'block';
@@ -170,13 +154,38 @@ function endGame() {
                 idToken: idToken, score: score
             });
         });
+    } else {
+        loggedInActions.style.display = 'none';
+        guestScoreForm.style.display = 'block';
+        
+        submitGuestScoreBtn.onclick = () => {
+            const name = document.getElementById('guest-name').value.trim();
+            if (name) {
+                socket.emit('submit-guest-score', {
+                    name: name,
+                    score: score,
+                    timeMode: 60,
+                    mode: 'flick'
+                });
+                alert('登録しました！');
+                guestScoreForm.style.display = 'none';
+                loggedInActions.style.display = 'block';
+            } else {
+                alert('名前を入力してください。');
+            }
+        };
+        
+        skipGuestScoreBtn.onclick = () => {
+            guestScoreForm.style.display = 'none';
+            loggedInActions.style.display = 'block';
+        };
     }
 }
 
 // --- 初期化処理 ---
 auth.onAuthStateChanged(user => {
     if (user) currentUser = user;
-    else window.location.href = '/login';
+    // 未ログイン時のリダイレクトを削除
 });
 socket.on('connect', () => {
     socket.emit('get-typing-data');
@@ -192,8 +201,20 @@ socket.on('typing-score-saved', ({ isNewHighscore }) => {
         highscoreDisplay.style.display = 'block';
     }
 });
+
 startBtn.disabled = true;
 startBtn.textContent = '問題データ読込中...';
-startBtn.addEventListener('click', startGame);
-playAgainBtn.addEventListener('click', startGame);
+
+const handleStart = (event) => {
+    event.preventDefault();
+    startScreen.style.display = 'none';
+    gameScreen.style.display = 'block';
+    flickInput.focus();
+    startGame();
+};
+
+startBtn.addEventListener('click', handleStart);
+startBtn.addEventListener('touchstart', handleStart);
+playAgainBtn.addEventListener('click', handleStart);
+playAgainBtn.addEventListener('touchstart', handleStart);
 flickInput.addEventListener('input', handleInput);

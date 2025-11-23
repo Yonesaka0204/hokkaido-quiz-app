@@ -6,18 +6,15 @@ const loggedOutView = document.getElementById('logged-out-view');
 const usernameDisplay = document.getElementById('username-display');
 const levelDisplay = document.getElementById('level-display');
 const logoutBtn = document.getElementById('logout-btn');
-
-// ログイン後メニューの要素
 const loggedInMenu = document.getElementById('logged-in-menu');
 const singlePlayBtn = document.getElementById('single-play-btn');
 const multiPlayBtn = document.getElementById('multi-play-btn');
-
-// マルチプレイ用フォームの要素
 const multiplayerJoinForm = document.getElementById('multiplayer-join-form');
 const roomIdInputMulti = document.getElementById('room-id-input-multi');
-
-// ゲスト用フォームの要素
 const joinRoomFormGuest = document.getElementById('join-room-form-guest');
+const typingGameBtn = document.getElementById('typing-game-btn');
+// ▼▼▼ ゲストボタン取得を追加 ▼▼▼
+const guestTypingBtn = document.getElementById('guest-typing-btn'); 
 
 // --- ログイン状態の監視 ---
 auth.onAuthStateChanged(user => {
@@ -39,29 +36,21 @@ auth.onAuthStateChanged(user => {
 });
 
 // --- イベントリスナー ---
-
-// ログアウトボタン
 logoutBtn.addEventListener('click', () => {
     auth.signOut().then(() => {
         alert('ログアウトしました。');
         window.location.reload();
     });
 });
-
-// シングルプレイボタン
 singlePlayBtn.addEventListener('click', () => {
     const roomId = 'quiz' + Math.random().toString(36).substring(2, 10);
     sessionStorage.setItem('isSinglePlayer', 'true');
     window.location.href = `/room/${roomId}`;
 });
-
-// マルチプレイボタン
 multiPlayBtn.addEventListener('click', () => {
     loggedInMenu.style.display = 'none';
     multiplayerJoinForm.style.display = 'block';
 });
-
-// マルチプレイフォームの送信
 multiplayerJoinForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const roomId = roomIdInputMulti.value.trim();
@@ -70,8 +59,6 @@ multiplayerJoinForm.addEventListener('submit', (e) => {
         window.location.href = `/room/${roomId}`;
     }
 });
-
-// ゲストフォームの送信
 joinRoomFormGuest.addEventListener('submit', (e) => {
     e.preventDefault();
     const guestName = document.getElementById('guest-name-input').value.trim();
@@ -82,11 +69,13 @@ joinRoomFormGuest.addEventListener('submit', (e) => {
         window.location.href = `/room/${roomId}`;
     }
 });
+typingGameBtn.addEventListener('click', () => {
+    window.location.href = '/typing';
+});
 
-// --- 地名タイピングモードへの遷移 ---
-const typingGameBtn = document.getElementById('typing-game-btn');
-if (typingGameBtn) {
-    typingGameBtn.addEventListener('click', () => {
+// ▼▼▼ ゲストボタンの処理を追加 ▼▼▼
+if (guestTypingBtn) {
+    guestTypingBtn.addEventListener('click', () => {
         window.location.href = '/typing';
     });
 }

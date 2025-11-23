@@ -1,10 +1,11 @@
-// public/typing.js
+// public/typing.js (ゲストプレイ対応版)
 
 // --- DOM要素の取得 ---
 const startScreen = document.getElementById('start-screen');
 const gameScreen = document.getElementById('game-screen');
 const resultsScreen = document.getElementById('results-screen');
 const timeButtons = document.querySelectorAll('.time-btn');
+const flickModeBtn = document.getElementById('flick-mode-btn');
 const timerDisplay = document.querySelector('#timer span');
 const kpmDisplay = document.querySelector('#kpm span');
 const accuracyDisplay = document.querySelector('#accuracy span');
@@ -22,6 +23,13 @@ const finalAccuracyDisplay = document.getElementById('final-accuracy');
 const highscoreDisplay = document.getElementById('highscore-message');
 const xpMessage = document.getElementById('xp-message');
 const playAgainBtn = document.getElementById('play-again-btn');
+
+// ゲスト用要素
+const guestScoreForm = document.getElementById('guest-score-form');
+const guestNameInput = document.getElementById('guest-name');
+const submitGuestScoreBtn = document.getElementById('submit-guest-score-btn');
+const skipGuestScoreBtn = document.getElementById('skip-guest-score-btn');
+const loggedInActions = document.getElementById('logged-in-actions');
 
 // --- 効果音関連 ---
 const sounds = {
@@ -341,18 +349,51 @@ function endGame() {
     finalAccuracyDisplay.textContent = `${Math.round(finalAccuracyRate * 100)}%`;
     gameScreen.style.display = 'none';
     resultsScreen.style.display = 'block';
+    
+    // ▼▼▼ ゲスト対応のロジックを追加 ▼▼▼
     if (currentUser) {
+        // ログインユーザー: 自動保存
+        loggedInActions.style.display = 'block';
+        guestScoreForm.style.display = 'none';
         currentUser.getIdToken(true).then(idToken => {
             socket.emit('submit-typing-score', {
                 idToken: idToken,
                 timeMode: timeLimit,
                 score: finalScore
             });
-        }).catch(error => console.error("IDトークンの取得に失敗:", error));
+        });
+    } else {
+        // ゲストユーザー: 登録フォーム表示
+        loggedInActions.style.display = 'none'; // 通常のボタンを一時的に隠す
+        guestScoreForm.style.display = 'block';
+        
+        // イベントリスナーは1回だけ追加するため、onclickで上書きするか、removeEventListenerが必要
+        // 簡易的にonclickを使用
+        submitGuestScoreBtn.onclick = () => {
+            const name = guestNameInput.value.trim();
+            if (name) {
+                socket.emit('submit-guest-score', {
+                    name: name,
+                    score: finalScore,
+                    timeMode: timeLimit,
+                    mode: 'typing' // ローマ字入力
+                });
+                alert('登録しました！');
+                guestScoreForm.style.display = 'none';
+                loggedInActions.style.display = 'block';
+            } else {
+                alert('名前を入力してください。');
+            }
+        };
+        
+        skipGuestScoreBtn.onclick = () => {
+            guestScoreForm.style.display = 'none';
+            loggedInActions.style.display = 'block';
+        };
     }
+    // ▲▲▲ ここまで ▲▲▲
 }
 
-// --- イベントリスナー設定 ---
 timeButtons.forEach(button => {
     button.addEventListener('click', () => {
         if (button.disabled) return;
@@ -361,34 +402,32 @@ timeButtons.forEach(button => {
     });
 });
 
+flickModeBtn.addEventListener('click', () => {
+    window.location.href = '/flick';
+});
+
 playAgainBtn.addEventListener('click', () => {
     resultsScreen.style.display = 'none';
     startScreen.style.display = 'block';
 });
-
 virtualKeyboard.addEventListener('click', (e) => {
     if (e.target.classList.contains('key')) {
         handleKeyPress({ key: e.target.dataset.key, preventDefault: () => {} });
     }
 });
-
 auth.onAuthStateChanged(user => {
     if (user) currentUser = user;
+    // 未ログイン時のリダイレクトを削除
 });
-
 socket.on('connect', () => {
     socket.emit('get-typing-data');
 });
-
 socket.on('typing-data', (data) => {
     allQuizData = data;
     timeButtons.forEach(b => {
-        if (b.id !== 'flick-mode-btn') {
-            b.disabled = false;
-        }
+        if(b.id !== 'flick-mode-btn') b.disabled = false;
     });
 });
-
 socket.on('typing-score-saved', ({ isNewHighscore, xpGained }) => {
     if (isNewHighscore) {
         highscoreDisplay.textContent = '🎉 ハイスコア更新！';

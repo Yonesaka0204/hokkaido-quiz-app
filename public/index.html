@@ -28,7 +28,7 @@
                     <span style="color: #e0e0e0;">|</span>
                     <button id="logout-btn" style="background: none; border: none; color: #95a5a6; text-decoration: underline; font-size: 0.9rem; cursor: pointer; padding: 0; margin: 0; box-shadow: none; width: auto;">ログアウト</button>
                 </div>
-                </div>
+            </div>
 
             <form id="multiplayer-join-form" style="display: none; margin-top: 1.5rem;">
                 <p>部屋を「作成」または「参加」するための合言葉を入力してください。</p>
@@ -41,13 +41,15 @@
         <div id="logged-out-view" style="display: none;">
             <div class="auth-section">
                 <p>アカウントにログインすると成績が記録されます。</p>
+                
+                <button id="guest-typing-btn" class="auth-button" style="background-color: #9b59b6; margin-bottom: 1rem;">地名タイピング (ゲスト)</button>
                 <a href="/login" class="auth-button">ログイン</a>
                 <a href="/signup" class="auth-button">新規登録</a>
                 <a href="/ranking" class="auth-button" style="background-color: #f39c12;">ランキング</a>
             </div>
             <hr style="margin: 2rem 0;">
             <form id="join-room-form-guest">
-                <p>または、ゲストとして参加できます。</p>
+                <p>または、ゲストとしてマルチプレイに参加</p>
                 <input id="guest-name-input" placeholder="ゲスト名" required autocomplete="off" class="auth-input">
                 <input id="room-id-input-guest" placeholder="部屋ID" required autocomplete="off" class="auth-input">
                 <button type="submit">ゲストとして参加</button>

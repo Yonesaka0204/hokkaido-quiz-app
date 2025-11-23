@@ -7,15 +7,11 @@ const admin = require('firebase-admin');
 try {
     const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
     let serviceAccount;
-
     if (serviceAccountString) {
-        // Renderなどの本番環境：環境変数から認証情報を読み込む
         serviceAccount = JSON.parse(serviceAccountString);
     } else {
-        // ローカル開発環境：serviceAccountKey.jsonファイルから認証情報を読み込む
         serviceAccount = require('./serviceAccountKey.json');
     }
-
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount)
     });
@@ -28,13 +24,10 @@ try {
 }
 
 const db = admin.firestore();
-
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
-
 const allQuizData = require('./quiz-data.json');
-
 const rooms = {};
 
 app.use(express.static(path.join(__dirname, 'public')));
@@ -55,6 +48,7 @@ app.get('/flick', (req, res) => res.sendFile(path.join(__dirname, 'public/flick.
 io.on('connection', (socket) => {
     
     socket.on('join-room', async ({ roomId, idToken, name }) => {
+        // (中略) ... 元のjoin-roomロジック
         if (rooms[roomId] && rooms[roomId].quizState.isActive) {
             socket.emit('join-error', { message: '現在クイズが進行中のため、入室できません。' });
             return;
@@ -99,6 +93,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('start-quiz', ({ roomId, difficulty, answerFormat, isRanked }) => {
+        // (中略) ... 元のstart-quizロジック
         const room = rooms[roomId];
         if (!room || room.quizState.isActive) return;
         const state = room.quizState;
@@ -143,6 +138,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('player-ready', async ({ roomId, idToken, name }) => {
+        // (中略) ... 元のplayer-readyロジック
         const room = rooms[roomId];
         if (!room || !room.quizState.isActive) return;
         try {
@@ -181,6 +177,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('submit-answer', ({ roomId, answer, questionText }) => {
+        // (中略) ... 元のsubmit-answerロジック
         const room = rooms[roomId];
         if (!room || !room.quizState.isActive) return;
         const state = room.quizState;
@@ -227,36 +224,66 @@ io.on('connection', (socket) => {
         }
     });
 
+    // ▼▼▼ 修正点：ランキング取得ロジックにゲストのマージを追加 ▼▼▼
     socket.on('get-rankings', async () => {
         try {
             const usersRef = db.collection('users');
-            const getRanking = async (field, isNested = false) => {
-                const snapshot = await usersRef.orderBy(field, 'desc').limit(100).get();
-                return snapshot.docs.map(doc => {
+            const guestsRef = db.collection('guest_scores');
+
+            // ユーザーとゲストをマージしてランキングを作るヘルパー関数
+            const getMergedRanking = async (userField, guestMode, guestTime) => {
+                // 1. ユーザーのスコアを取得
+                const userSnapshot = await usersRef.orderBy(userField, 'desc').limit(100).get();
+                const userScores = userSnapshot.docs.map(doc => {
                     const data = doc.data();
                     let score = 0;
-                    if (isNested) {
-                        const keys = field.split('.');
+                    if (userField.includes('.')) {
+                        const keys = userField.split('.');
                         score = (data[keys[0]] && data[keys[0]][keys[1]]) || 0;
                     } else {
-                        score = data[field] || 0;
+                        score = data[userField] || 0;
                     }
                     return { uid: doc.id, username: data.username, score };
                 });
+
+                // 2. ゲストのスコアを取得 (特定のモードと時間でフィルタ)
+                const guestSnapshot = await guestsRef
+                    .where('mode', '==', guestMode)
+                    .where('timeMode', '==', guestTime)
+                    .orderBy('score', 'desc')
+                    .limit(100)
+                    .get();
+                
+                const guestScores = guestSnapshot.docs.map(doc => ({
+                    uid: 'guest', // リンクを作らないためのマーカー
+                    username: doc.data().name,
+                    score: doc.data().score
+                }));
+
+                // 3. マージしてソートして上位100件を返す
+                const merged = [...userScores, ...guestScores];
+                merged.sort((a, b) => b.score - a.score);
+                return merged.slice(0, 100);
             };
+
+            // 既存のランキング（レベルなどはユーザーのみ）
             const levelSnapshot = await usersRef.orderBy('level', 'desc').orderBy('xp', 'desc').limit(100).get();
             const levelRanking = levelSnapshot.docs.map(doc => ({ uid: doc.id, username: doc.data().username, level: doc.data().level }));
 
             const ratingSnapshot = await usersRef.orderBy('rating', 'desc').limit(100).get();
             const ratingRanking = ratingSnapshot.docs.map(doc => ({ uid: doc.id, username: doc.data().username, rating: doc.data().rating }));
             
-            const correctRanking = (await getRanking('totalCorrect')).map(u => ({...u, totalCorrect: u.score}));
-            const endlessRanking = (await getRanking('endlessHighScore')).map(u => ({...u, endlessHighScore: u.score}));
+            const correctSnapshot = await usersRef.orderBy('totalCorrect', 'desc').limit(100).get();
+            const correctRanking = correctSnapshot.docs.map(doc => ({ uid: doc.id, username: doc.data().username, totalCorrect: doc.data().totalCorrect }));
+
+            const endlessSnapshot = await usersRef.orderBy('endlessHighScore', 'desc').limit(100).get();
+            const endlessRanking = endlessSnapshot.docs.map(doc => ({ uid: doc.id, username: doc.data().username, endlessHighScore: doc.data().endlessHighScore || 0 }));
             
-            const typing60sRanking = await getRanking('typingScores.60', true);
-            const typing120sRanking = await getRanking('typingScores.120', true);
-            const typing180sRanking = await getRanking('typingScores.180', true);
-            const flickRanking = await getRanking('flickScores.60', true);
+            // マージされたタイピングランキング
+            const typing60sRanking = await getMergedRanking('typingScores.60', 'typing', 60);
+            const typing120sRanking = await getMergedRanking('typingScores.120', 'typing', 120);
+            const typing180sRanking = await getMergedRanking('typingScores.180', 'typing', 180);
+            const flickRanking = await getMergedRanking('flickScores.60', 'flick', 60);
 
             socket.emit('rankings-data', { 
                 levelRanking, ratingRanking, correctRanking, endlessRanking,
@@ -270,6 +297,7 @@ io.on('connection', (socket) => {
             socket.emit('rankings-error', { message: errorMessage });
         }
     });
+    // ▲▲▲ ここまで ▲▲▲
 
     socket.on('get-user-profile', async ({ uid }) => {
         try {
@@ -414,6 +442,26 @@ io.on('connection', (socket) => {
             console.error("フリックスコアの保存/XP更新に失敗:", error);
         }
     });
+
+    // ▼▼▼ ゲストスコア保存処理を追加 ▼▼▼
+    socket.on('submit-guest-score', async ({ name, score, timeMode, mode }) => {
+        try {
+            // バリデーション
+            if (!name || !score || !mode || (mode === 'typing' && !timeMode)) return;
+            
+            // ゲストスコア用のコレクションに保存
+            await db.collection('guest_scores').add({
+                name: name,
+                score: score,
+                mode: mode, // 'typing' or 'flick'
+                timeMode: timeMode || 60, // フリックは常に60だが統一のため
+                createdAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+        } catch (error) {
+            console.error("ゲストスコアの保存に失敗:", error);
+        }
+    });
+    // ▲▲▲ ここまで ▲▲▲
 });
 
 function sendNextQuestion(roomId) {

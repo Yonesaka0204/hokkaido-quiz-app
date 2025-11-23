@@ -15,7 +15,7 @@
             <button class="time-btn" data-time="60">60秒チャレンジ (ローマ字)</button>
             <button class="time-btn" data-time="120">120秒チャレンジ (ローマ字)</button>
             <button class="time-btn" data-time="180">180秒チャレンジ (ローマ字)</button>
-            <button id="flick-mode-btn" class="time-btn" disabled>フリック入力 (開発中)</button>
+            <button id="flick-mode-btn" class="time-btn" style="background: linear-gradient(145deg, #e67e22, #d35400);">60秒チャレンジ (フリック)</button>
         </div>
         <a href="/" class="secondary-btn" style="margin-top: 2rem;">トップページに戻る</a>
     </div>
@@ -34,6 +34,7 @@
         <div id="combo-display" class="combo-animation"></div>
         <div id="score-display">SCORE: 0</div>
     </div>
+
     <div id="results-screen" class="container" style="display: none;">
         <h1>結果</h1>
         <div class="result-grid">
@@ -54,13 +55,22 @@
                 <span id="final-accuracy" class="result-value">0%</span>
             </div>
         </div>
+        
         <div id="highscore-message"></div>
         <div id="xp-message"></div>
-        <div class="result-actions">
+
+        <div id="guest-score-form" style="display: none; margin-top: 1.5rem; border-top: 1px solid #eee; padding-top: 1rem;">
+            <h3>ランキングに登録しますか？</h3>
+            <input type="text" id="guest-name" placeholder="名前を入力 (10文字以内)" maxlength="10" class="auth-input" style="width: 80%; margin: 0 auto 1rem auto;">
+            <button id="submit-guest-score-btn" class="auth-button" style="background-color: #f39c12;">ランキングに登録</button>
+            <button id="skip-guest-score-btn" class="secondary-btn" style="margin-top: 0.5rem; background-color: #95a5a6;">登録しない</button>
+        </div>
+        <div class="result-actions" id="logged-in-actions">
             <button id="play-again-btn">もう一度プレイ</button>
             <a href="/" class="secondary-btn">トップページに戻る</a>
         </div>
     </div>
+
     <div id="virtual-keyboard">
         <div class="keyboard-row">
             <button class="key" data-key="q">q</button>
