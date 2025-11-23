@@ -3,9 +3,15 @@
 const roomId = window.location.pathname.split('/')[2];
 const socket = io();
 
+// ▼▼▼ 設定値を追加 ▼▼▼
+// 座標取得ツールで使用した「元の地図画像」のサイズを設定してください
+const ORIGINAL_MAP_WIDTH = 2400;  // 例: 800px (座標取得時の画像幅)
+const ORIGINAL_MAP_HEIGHT = 1600; // 例: 800px (座標取得時の画像高さ)
+// ▲▲▲ ここまで ▲▲▲
+
 let hasProceeded = false;
 let isEliminated = false;
-let canProceed = false; // ★★★ 進行許可フラグを追加 ★★★
+let canProceed = false;
 
 const progressEl = document.getElementById('progress');
 const questionEl = document.getElementById('question');
@@ -14,6 +20,11 @@ const resultEl = document.getElementById('result');
 const backToLobbyBtn = document.getElementById('back-to-lobby-btn');
 const playerStatusContainer = document.getElementById('player-status-container');
 const playerStatusList = document.getElementById('player-status-list');
+
+// ▼▼▼ 地図用要素を取得 ▼▼▼
+const mapContainer = document.getElementById('map-container');
+const mapPin = document.getElementById('map-pin');
+// ▲▲▲ ここまで ▲▲▲
 
 socket.on('connect', () => {
     auth.onAuthStateChanged((user) => {
@@ -43,9 +54,13 @@ socket.on('new-question', (data) => {
     document.removeEventListener('keydown', handleKeydown);
 
     hasProceeded = false;
-    canProceed = false; // ★★★ 問題が表示されるたびに進行不可にリセット ★★★
+    canProceed = false; 
     resultEl.innerHTML = '';
     
+    // ▼▼▼ 地図を隠す ▼▼▼
+    if (mapContainer) mapContainer.style.display = 'none';
+    // ▲▲▲ ここまで ▲▲▲
+
     if (!isEliminated) {
         optionsContainer.innerHTML = '';
         questionEl.style.display = 'block';
@@ -134,7 +149,8 @@ socket.on('player-answered', ({ name, isCorrect, eliminated }) => {
     }
 });
 
-socket.on('answer-result', ({ correct, correctAnswer, trivia, eliminated }) => {
+// ▼▼▼ answer-result 受信時の処理 (修正) ▼▼▼
+socket.on('answer-result', ({ correct, correctAnswer, trivia, eliminated, region, x, y }) => {
     if (isEliminated) return;
     
     if (eliminated) {
@@ -144,6 +160,19 @@ socket.on('answer-result', ({ correct, correctAnswer, trivia, eliminated }) => {
 
     questionEl.style.display = 'none';
     resultEl.innerHTML = '';
+
+    // --- 地図表示ロジック ---
+    if (mapContainer && x !== undefined && y !== undefined) {
+        mapContainer.style.display = 'block';
+        
+        // 座標をパーセンテージに変換
+        const leftPercent = (x / ORIGINAL_MAP_WIDTH) * 100;
+        const topPercent = (y / ORIGINAL_MAP_HEIGHT) * 100;
+        
+        mapPin.style.left = `${leftPercent}%`;
+        mapPin.style.top = `${topPercent}%`;
+    }
+    // ---------------------
 
     const resultContainer = document.createElement('div');
     resultContainer.className = 'result-container';
@@ -183,6 +212,7 @@ socket.on('answer-result', ({ correct, correctAnswer, trivia, eliminated }) => {
     
     resultEl.appendChild(resultContainer);
 });
+// ▲▲▲ ここまで ▲▲▲
 
 socket.on('all-answers-in', () => {
     const promptEl = document.getElementById('result-prompt');
@@ -193,14 +223,13 @@ socket.on('all-answers-in', () => {
         }
     }
     if (!isEliminated) {
-        canProceed = true; // ★★★ ここで初めて進行を許可する ★★★
+        canProceed = true; 
         document.addEventListener('click', proceedToNext);
         document.addEventListener('keydown', handleKeydown);
     }
 });
 
 function proceedToNext() {
-    // ★★★ フラグのチェックを追加 ★★★
     if (hasProceeded || isEliminated || !canProceed) return;
     hasProceeded = true;
 

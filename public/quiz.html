@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF--8">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>クイズ挑戦中！</title>
     <link rel="stylesheet" href="/style.css">
@@ -21,7 +21,14 @@
         <h2 id="question">クイズの開始を待っています...</h2>
         <div id="options-container"></div>
         <div id="result"></div>
-    </div>
+
+        <div id="map-container" style="display: none;">
+            <div class="map-wrapper">
+                <img src="/images/hokkaido-map.svg" id="quiz-map-image" alt="北海道地図">
+                <div id="map-pin">📍</div>
+            </div>
+        </div>
+        </div>
     <button id="back-to-lobby-btn" class="secondary-btn">ロビーに戻る</button>
 
     <div id="chat-panel">
@@ -41,4 +48,4 @@
     <script src="/firebase-config.js"></script>
     <script src="/quiz.js"></script>
   </body>
-  </html>
+</html>

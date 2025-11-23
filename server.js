@@ -200,7 +200,17 @@ io.on('connection', (socket) => {
             } else {
                 if (state.difficulty === 'ENDLESS') player.eliminated = true;
             }
-            socket.emit('answer-result', { correct: isCorrect, correctAnswer: question.answer, trivia: question.trivia, eliminated: player.eliminated });
+            socket.emit('answer-result', { 
+                correct: isCorrect, 
+                correctAnswer: question.answer, 
+                trivia: question.trivia, 
+                eliminated: player.eliminated,
+                // ▼▼▼ 追加 ▼▼▼
+                region: question.region, // 後で使うかもしれないので
+                x: question.x,           // 座標X
+                y: question.y            // 座標Y
+                // ▲▲▲ 追加 ▲▲▲
+            });
             io.to(roomId).emit('player-answered', { name: player.name, isCorrect, eliminated: player.eliminated });
             state.answersReceived++;
             const activePlayers = room.users.filter(u => !u.eliminated);

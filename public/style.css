@@ -610,7 +610,6 @@ input:focus::placeholder, textarea:focus::placeholder { color: transparent; }
     color: #9b59b6;
 }
 
-/* ▼▼▼ ここから追加 ▼▼▼ */
 .menu-row {
     display: flex;
     gap: 1rem; /* ボタン間のスペース */
@@ -620,8 +619,6 @@ input:focus::placeholder, textarea:focus::placeholder { color: transparent; }
     width: 100%; /* flexの子要素として幅を均等に分けるため */
     margin-top: 0; /* 親要素のmarginを適用するためリセット */
 }
-/* ▲▲▲ ここまで ▲▲▲ */
-/* public/style.css の末尾に追記 */
 
 .ranking-box.flick-ranking h2 {
     border-bottom-color: #e67e22;
@@ -629,8 +626,6 @@ input:focus::placeholder, textarea:focus::placeholder { color: transparent; }
 .ranking-box.flick-ranking .rank-stat {
     color: #e67e22;
 }
-
-/* public/style.css の末尾に追記 */
 
 /* --- ヘルプボタン --- */
 .container {
@@ -745,8 +740,6 @@ input:focus::placeholder, textarea:focus::placeholder { color: transparent; }
     color: #666;
     line-height: 1.5;
 }
-
-/* public/style.css の末尾に追記 */
 
 /* --- 新トップページ（ログアウト時）のデザイン --- */
 
@@ -901,3 +894,47 @@ input:focus::placeholder, textarea:focus::placeholder { color: transparent; }
     background-color: #f39c12;
     color: white;
 }
+
+/* ▼▼▼ 追加：地図表示エリア ▼▼▼ */
+#map-container {
+    margin-top: 1.5rem;
+    width: 100%;
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+.map-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 600px; /* PCでの最大幅 */
+    margin: 0 auto;   /* 中央寄せ */
+}
+
+#quiz-map-image {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+#map-pin {
+    position: absolute;
+    font-size: 2rem; /* ピンのサイズ */
+    width: 2rem;
+    height: 2rem;
+    line-height: 2rem;
+    text-align: center;
+    transform: translate(-50%, -100%); /* 座標がピンの「針の先」になるように調整 */
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    pointer-events: none;
+    transition: top 0.5s ease, left 0.5s ease;
+    
+    /* ピンのアニメーション */
+    animation: dropPin 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes dropPin {
+    from { opacity: 0; transform: translate(-50%, -150%); }
+    to { opacity: 1; transform: translate(-50%, -100%); }
+}
+/* ▲▲▲ ここまで ▲▲▲ */
