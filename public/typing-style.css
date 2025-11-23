@@ -20,6 +20,13 @@ body {
 .time-btn:hover {
     background: linear-gradient(145deg, #0088ff, #0060c5);
 }
+.time-btn:disabled,
+.time-btn:disabled:hover {
+    background: #bdc3c7; 
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
 
 /* --- ゲーム画面 --- */
 #stats-bar {
@@ -74,6 +81,7 @@ body {
     padding: 0.5rem;
     white-space: nowrap;
     overflow-x: auto;
+    max-width: 100%; /* 横幅からはみ出ないように */
 }
 #romaji-display span {
     color: #adb5bd; /* これから打つ文字の色 */
@@ -81,6 +89,12 @@ body {
 }
 #romaji-display span.typed {
     color: #212529; /* 打ち終わった文字の色 */
+}
+#romaji-display span.correct {
+    color: #212529; /* 正解の色 */
+}
+#romaji-display span.untyped {
+    color: #adb5bd; /* 未入力の色 */
 }
 #romaji-display span.incorrect {
     color: #e74c3c; /* ミスした時の色 */
@@ -108,6 +122,7 @@ body {
     100% { transform: scale(1); }
 }
 
+/* ミスタイプ時のシェイクアニメーション */
 .shake-animation {
     animation: shake 0.2s ease-in-out;
 }
@@ -154,9 +169,7 @@ body {
     animation: fadeIn 1s ease-in-out;
 }
 
-/* ▼▼▼ スマホ対応用スタイル ▼▼▼ */
-
-/* スマホでの入力用トラップ（見えないがフォーカス可能） */
+/* ▼▼▼ スマホ用入力トラップ (透明) ▼▼▼ */
 #mobile-input-trap {
     position: absolute;
     top: 0;
@@ -184,21 +197,65 @@ body {
     margin-top: 1rem;
 }
 
-/* スマホ画面のみ適用 */
+/* ▼▼▼ スマホ画面専用レイアウト調整 (キーボード対策) ▼▼▼ */
 @media (max-width: 768px) {
+    /* 画面全体を上寄せにする */
+    body {
+        justify-content: flex-start; /* 上詰め配置 */
+        padding-top: 20px;
+        padding-bottom: 0; /* キーボードが出るので下部はOSに任せる */
+    }
+
+    .container {
+        width: 95%; /* 横幅を広げる */
+        padding: 1rem; /* 内側の余白を減らす */
+        margin-top: 0;
+    }
+
+    /* ヒントを表示 */
     .mobile-hint {
         display: block;
+        margin-top: 0.5rem;
+        font-size: 0.8rem;
     }
-    /* キーボードが出た時のために下部余白を確保 */
-    body {
-        padding-bottom: 200px; 
-    }
-}
 
-.time-btn:disabled,
-.time-btn:disabled:hover {
-    background: #bdc3c7; 
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    /* スタッツバーをコンパクトに */
+    #stats-bar {
+        padding: 0.5rem;
+        margin-bottom: 1rem;
+        font-size: 1rem;
+    }
+    .stat-item span {
+        font-size: 1.2rem;
+        display: block; /* スマホでは改行して数値を大きく見せる */
+    }
+
+    /* 問題表示エリアをギュッと縮める */
+    #word-container {
+        padding: 1rem;
+        min-height: 140px; /* 高さを減らす */
+        margin-bottom: 0.5rem;
+    }
+    #kanji-display {
+        font-size: 2.2rem; /* 漢字サイズ縮小 */
+        margin-bottom: 0.2rem;
+    }
+    #hiragana-display {
+        font-size: 1.1rem; /* かなサイズ縮小 */
+        margin-bottom: 0.5rem;
+    }
+    #romaji-display {
+        font-size: 1.4rem; /* ローマ字サイズ縮小 */
+        padding: 0.2rem;
+    }
+
+    /* スコア・コンボも小さく */
+    #score-display {
+        font-size: 1.2rem;
+        margin-top: 0.5rem;
+    }
+    #combo-display {
+        font-size: 1.2rem;
+        height: 20px;
+    }
 }
