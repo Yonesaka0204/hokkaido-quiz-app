@@ -34,11 +34,22 @@ let validationTimer = null;
 const socket = io();
 let currentUser = null;
 
-// ★★★ 追加: 小文字と大文字の対応マップ ★★★
-const smallToLargeMap = {
+// ★★★ 修正: 許容する中間文字のマップ（小文字、濁点、半濁点に対応） ★★★
+const validIntermediateMap = {
+    // 小さい文字 (拗音・促音)
     'ぁ': 'あ', 'ぃ': 'い', 'ぅ': 'う', 'ぇ': 'え', 'ぉ': 'お',
     'っ': 'つ',
-    'ゃ': 'や', 'ゅ': 'ゆ', 'ょ': 'よ'
+    'ゃ': 'や', 'ゅ': 'ゆ', 'ょ': 'よ',
+    
+    // 濁点 (Dakuten)
+    'が': 'か', 'ぎ': 'き', 'ぐ': 'く', 'げ': 'け', 'ご': 'こ',
+    'ざ': 'さ', 'じ': 'し', 'ず': 'す', 'ぜ': 'せ', 'ぞ': 'そ',
+    'だ': 'た', 'ぢ': 'ち', 'づ': 'つ', 'で': 'て', 'ど': 'と',
+    'ば': 'は', 'び': 'ひ', 'ぶ': 'ふ', 'べ': 'へ', 'ぼ': 'ほ',
+    'ヴ': 'う', 
+    
+    // 半濁点 (Handakuten)
+    'ぱ': 'は', 'ぴ': 'ひ', 'ぷ': 'ふ', 'ぺ': 'へ', 'ぽ': 'ほ'
 };
 
 // --- スコアリング ---
@@ -50,7 +61,6 @@ function getComboMultiplier(c) {
 
 // --- ゲームロジック ---
 function chooseNewQuestion() {
-    // ★★★ 修正: タイマーが残っていたら消す ★★★
     if (validationTimer) {
         clearTimeout(validationTimer);
         validationTimer = null;
@@ -79,14 +89,14 @@ function updateInputFeedback(currentValue) {
             if (currentValue[i] === answer[i]) {
                 span.className = 'correct';
             } else {
-                // ★★★ 修正: 小文字待ちの時に大文字が入っていても、ミス色（untyped）にはしない（保留状態） ★★★
+                // ★★★ 修正: 中間文字マップを使って判定 ★★★
                 const targetChar = answer[i];
                 const inputChar = currentValue[i];
-                if (smallToLargeMap[targetChar] === inputChar) {
-                    // まだ変換前なので、色はつけないがミスでもない状態（ここではuntyped扱いにしておく）
+                if (validIntermediateMap[targetChar] === inputChar) {
+                    // 変換待ち（例：「ぽ」に対して「ほ」が入力されている）状態
                     span.className = 'untyped'; 
                 } else {
-                    span.className = 'untyped'; // 本当のミスの場合は後でシェイクされるので色はuntypedでOK
+                    span.className = 'untyped'; 
                 }
             }
         } else {
@@ -109,10 +119,8 @@ function handleInput() {
     clearTimeout(validationTimer);
     const currentValue = flickInput.value;
     
-    // 削除キーが押された場合などの対応
     const diff = currentValue.length - previousInput.length;
     if (diff > 1) {
-        // 一気に複数文字入るのはおかしいので戻す（ペースト防止など）
         flickInput.value = previousInput;
         inputFeedback.classList.add('shake-animation');
         setTimeout(() => inputFeedback.classList.remove('shake-animation'), 200);
@@ -135,34 +143,27 @@ function handleInput() {
             comboDisplay.textContent = combo;
             
             chooseNewQuestion();
-            return; // ★★★ 重要: ここで終了して、下のpreviousInput更新を走らせない ★★★
+            return; 
         }
 
         // 2. 前方一致（入力途中）の場合
         if (answer.startsWith(value)) {
             if (value.length > previousInput.length) {
-                // 1文字進んだので加点（コンボボーナスは最後に計算でもいいが、演出としてここでも加算）
-                // ここでは加点せず、クリア時にまとめて加点する方式も一般的だが、
-                // 既存ロジックに合わせて少し加点してもよい。
-                // 今回は既存ロジックを踏襲し、文字ごとの加点は前回のコードに合わせて実装します。
                 const comboMultiplier = getComboMultiplier(combo);
                 score += Math.round(100 * comboMultiplier);
             }
         } 
-        // 3. 不一致だが、拗音（小さい文字）入力途中の場合
+        // 3. 不一致だが、変換途中（小文字・濁点・半濁点）の場合
         else {
-            // 最後の1文字だけが違っていて、かつそれが「小文字待ち」に対する「大文字入力」である場合
             const mismatchIndex = value.length - 1;
             
-            // まだ文字数がオーバーしていなくて、不一致箇所の手前までは合っている場合
             if (value.length <= answer.length && answer.startsWith(value.substring(0, mismatchIndex))) {
-                const targetChar = answer[mismatchIndex]; // 正解の文字（例：ょ）
-                const inputChar = value[mismatchIndex];   // 入力文字（例：よ）
+                const targetChar = answer[mismatchIndex]; // 正解の文字（例：ぽ）
+                const inputChar = value[mismatchIndex];   // 入力文字（例：ほ）
 
-                if (smallToLargeMap[targetChar] === inputChar) {
-                    // ★★★ 修正: これはミスではない。「変換待ち」状態なので許容する ★★★
-                    // スコア減算もシェイクもしない
-                    // そのまま表示を更新して終了
+                // ★★★ 修正: 中間文字マップで判定 ★★★
+                if (validIntermediateMap[targetChar] === inputChar) {
+                    // ミス扱いせず、入力を継続させる
                     scoreDisplay.textContent = score;
                     comboDisplay.textContent = combo;
                     updateInputFeedback(value);
@@ -176,9 +177,8 @@ function handleInput() {
             if (score < 0) score = 0;
             combo = 0;
             
-            // 入力をクリア
             flickInput.value = '';
-            previousInput = ''; // リセット
+            previousInput = ''; 
             
             inputFeedback.classList.add('shake-animation');
             setTimeout(() => inputFeedback.classList.remove('shake-animation'), 200);
@@ -186,7 +186,7 @@ function handleInput() {
             scoreDisplay.textContent = score;
             comboDisplay.textContent = combo;
             updateInputFeedback('');
-            return; // 入力をリセットしたのでここで終了
+            return; 
         }
 
         scoreDisplay.textContent = score;
@@ -195,15 +195,12 @@ function handleInput() {
         previousInput = flickInput.value;
     };
 
-    // 入力があった場合、少し待ってから判定（高速入力時のバタつき防止）
-    // ただし削除時は即時反映したい場合もあるが、統一してタイマー処理
     if (diff >= 1) {
         validate();
     } else {
-        validationTimer = setTimeout(validate, 150); // 変換操作などのための猶予
+        validationTimer = setTimeout(validate, 150); 
     }
     
-    // 表示更新（判定前の即時フィードバック用）
     updateInputFeedback(currentValue);
 }
 
