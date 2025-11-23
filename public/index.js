@@ -11,16 +11,20 @@ const singlePlayBtn = document.getElementById('single-play-btn');
 const multiPlayBtn = document.getElementById('multi-play-btn');
 const multiplayerJoinForm = document.getElementById('multiplayer-join-form');
 const roomIdInputMulti = document.getElementById('room-id-input-multi');
-const joinRoomFormGuest = document.getElementById('join-room-form-guest');
 const typingGameBtn = document.getElementById('typing-game-btn');
-const guestTypingBtn = document.getElementById('guest-typing-btn');
 
-// ▼▼▼ チュートリアル関連の要素を取得 ▼▼▼
+// ▼▼▼ ゲストモード用の要素を取得 ▼▼▼
+const guestNameInput = document.getElementById('guest-name-input');
+const guestSingleBtn = document.getElementById('guest-single-btn');
+const guestTypingBtn = document.getElementById('guest-typing-btn');
+const guestMultiBtn = document.getElementById('guest-multi-btn');
+const guestRoomIdInput = document.getElementById('guest-room-id');
+// ▲▲▲ ここまで ▲▲▲
+
 const helpBtn = document.getElementById('help-btn');
 const tutorialModal = document.getElementById('tutorial-modal');
 const closeTutorialIcon = document.getElementById('close-tutorial');
 const closeTutorialBtn = document.getElementById('close-tutorial-btn');
-// ▲▲▲ ここまで ▲▲▲
 
 // --- ログイン状態の監視 ---
 auth.onAuthStateChanged(user => {
@@ -41,7 +45,7 @@ auth.onAuthStateChanged(user => {
     }
 });
 
-// --- イベントリスナー ---
+// --- イベントリスナー (ログイン時) ---
 logoutBtn.addEventListener('click', () => {
     auth.signOut().then(() => {
         alert('ログアウトしました。');
@@ -65,57 +69,69 @@ multiplayerJoinForm.addEventListener('submit', (e) => {
         window.location.href = `/room/${roomId}`;
     }
 });
-joinRoomFormGuest.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const guestName = document.getElementById('guest-name-input').value.trim();
-    const roomId = document.getElementById('room-id-input-guest').value.trim();
-    if (roomId && guestName) {
-        sessionStorage.setItem('guestName', guestName);
-        sessionStorage.removeItem('isSinglePlayer');
-        window.location.href = `/room/${roomId}`;
-    }
-});
 typingGameBtn.addEventListener('click', () => {
     window.location.href = '/typing';
 });
-if (guestTypingBtn) {
-    guestTypingBtn.addEventListener('click', () => {
-        window.location.href = '/typing';
-    });
+
+// ▼▼▼ イベントリスナー (ゲスト時) ▼▼▼
+
+// ゲスト名の保存ヘルパー関数
+function saveGuestName() {
+    const name = guestNameInput.value.trim() || 'ゲスト';
+    sessionStorage.setItem('guestName', name);
+    return name;
 }
 
-// ▼▼▼ チュートリアル機能の実装 ▼▼▼
+// ゲスト：シングルプレイ
+guestSingleBtn.addEventListener('click', () => {
+    saveGuestName();
+    const roomId = 'quiz' + Math.random().toString(36).substring(2, 10);
+    sessionStorage.setItem('isSinglePlayer', 'true');
+    window.location.href = `/room/${roomId}`;
+});
 
-// モーダルを表示する関数
+// ゲスト：タイピング
+guestTypingBtn.addEventListener('click', () => {
+    saveGuestName();
+    window.location.href = '/typing';
+});
+
+// ゲスト：マルチプレイ参加
+guestMultiBtn.addEventListener('click', () => {
+    const roomId = guestRoomIdInput.value.trim();
+    if (roomId) {
+        saveGuestName();
+        sessionStorage.removeItem('isSinglePlayer');
+        window.location.href = `/room/${roomId}`;
+    } else {
+        alert('部屋IDを入力してください。');
+    }
+});
+// ▲▲▲ ここまで ▲▲▲
+
+
+// --- チュートリアル機能 ---
 function showTutorial() {
     tutorialModal.style.display = 'flex';
 }
-
-// モーダルを閉じる関数
 function closeTutorial() {
     tutorialModal.style.display = 'none';
-    // 「見た」という記録をブラウザに残す
     localStorage.setItem('tutorialSeen', 'true');
 }
 
-// 初回アクセス判定
 window.addEventListener('DOMContentLoaded', () => {
     const hasSeenTutorial = localStorage.getItem('tutorialSeen');
     if (!hasSeenTutorial) {
-        // まだ見ていない場合のみ自動表示
         showTutorial();
     }
 });
 
-// ボタン操作
 helpBtn.addEventListener('click', showTutorial);
 closeTutorialIcon.addEventListener('click', closeTutorial);
 closeTutorialBtn.addEventListener('click', closeTutorial);
 
-// 背景クリックでも閉じるようにする
 tutorialModal.addEventListener('click', (e) => {
     if (e.target === tutorialModal) {
         closeTutorial();
     }
 });
-// ▲▲▲ ここまで ▲▲▲

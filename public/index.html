@@ -8,7 +8,6 @@
 </head>
 <body>
     <div class="container">
-        <button id="help-btn" class="help-icon">?</button>
         <h1>北海道地名漢字クイズ</h1>
         
         <div id="logged-in-view" style="display: none;">
@@ -40,24 +39,48 @@
         </div>
         
         <div id="logged-out-view" style="display: none;">
-            <div class="auth-section">
-                <p>アカウントにログインすると成績が記録されます。</p>
+            
+            <div class="guest-section">
+                <h2 class="section-title">すぐに遊ぶ（ゲスト）</h2>
                 
-                <button id="guest-typing-btn" class="auth-button" style="background-color: #9b59b6; margin-bottom: 1rem;">地名タイピング (ゲスト)</button>
+                <div class="guest-name-box">
+                    <label for="guest-name-input">名前:</label>
+                    <input id="guest-name-input" type="text" value="ゲスト" maxlength="10" class="simple-input">
+                </div>
 
-                <a href="/login" class="auth-button">ログイン</a>
-                <a href="/signup" class="auth-button">新規登録</a>
-                <a href="/ranking" class="auth-button" style="background-color: #f39c12;">ランキング</a>
+                <div class="mode-grid">
+                    <button id="guest-single-btn" class="mode-card green">
+                        <span class="mode-icon">👤</span>
+                        <span class="mode-name">シングル<br>クイズ</span>
+                    </button>
+                    <button id="guest-typing-btn" class="mode-card purple">
+                        <span class="mode-icon">⌨️</span>
+                        <span class="mode-name">地名<br>タイピング</span>
+                    </button>
+                </div>
+
+                <div class="multi-join-box">
+                    <p>友達と対戦するなら</p>
+                    <div class="join-input-group">
+                        <input id="guest-room-id" placeholder="部屋IDを入力" class="simple-input">
+                        <button id="guest-multi-btn" class="small-btn blue">参加</button>
+                    </div>
+                </div>
             </div>
-            <hr style="margin: 2rem 0;">
-            <form id="join-room-form-guest">
-                <p>または、ゲストとしてマルチプレイに参加</p>
-                <input id="guest-name-input" placeholder="ゲスト名" required autocomplete="off" class="auth-input">
-                <input id="room-id-input-guest" placeholder="部屋ID" required autocomplete="off" class="auth-input">
-                <button type="submit">ゲストとして参加</button>
-            </form>
+
+            <div class="login-section">
+                <p class="login-desc">続きから遊ぶ・成績を保存する</p>
+                <div class="login-buttons">
+                    <a href="/login" class="text-link">ログイン</a>
+                    <span class="separator">|</span>
+                    <a href="/signup" class="text-link">新規登録</a>
+                </div>
+                <div style="margin-top: 1rem;">
+                    <a href="/ranking" class="ranking-link">🏆 ランキングを見る</a>
+                </div>
+            </div>
         </div>
-    </div>
+        </div>
 
     <div id="tutorial-modal" class="modal-overlay" style="display: none;">
         <div class="modal-content">
@@ -91,9 +114,10 @@
                     <p>ログインすると経験値(XP)が貯まる！レベルを上げて全国ランキング上位を目指そう。</p>
                 </div>
             </div>
-            <button id="close-tutorial-btn" class="auth-button" style="margin-top: 1rem;">わかった！</button>
+            <button id="close-tutorial-btn" class="auth-button" style="margin-top: 1rem;">わかった</button>
         </div>
     </div>
+
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
