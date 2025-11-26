@@ -520,13 +520,18 @@ body.chat-is-open #chat-toggle-btn:hover { background-color: #c0392b; }
     /* 既存のクラス設定：ヘッダーに被らないよう上に余白を持たせる */
     .container { 
         padding: 1.5rem; 
-        margin-top: 120px; 
+        /* margin-top: 120px;  */
     }
 
     /* ▼▼▼ パターンB: フリック・タイピングモード（キーボード優先） ▼▼▼ */
     .container.typing-mode {
         padding: 1.5rem; 
         margin-bottom: 400px;
+    }
+
+    .container.typing-mode2 {
+        padding: 1.5rem; 
+        margin-top: 120px;
     }
 }
 
