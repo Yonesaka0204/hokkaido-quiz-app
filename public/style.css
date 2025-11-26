@@ -526,7 +526,7 @@ body.chat-is-open #chat-toggle-btn:hover { background-color: #c0392b; }
     /* ▼▼▼ パターンB: フリック・タイピングモード（キーボード優先） ▼▼▼ */
     .container.typing-mode {
         padding: 1.5rem; 
-        margin-bottom: 400px;
+        margin-bottom: 350px;
     }
 
     .container.typing-mode2 {
