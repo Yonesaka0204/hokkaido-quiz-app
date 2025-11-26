@@ -200,7 +200,7 @@ body {
     .container {
         width: 100%; /* 幅いっぱい */
         padding: 5px; /* 最小限のパディング */
-        margin: 0;
+        /* margin: 0; */
         box-shadow: none;
         transform: none !important;
         animation: none !important;

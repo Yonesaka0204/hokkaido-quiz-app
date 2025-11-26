@@ -505,9 +505,29 @@ body.chat-is-open #chat-toggle-btn:hover { background-color: #c0392b; }
 }
 #chat-panel #chat-form { margin-top: 1rem; }
 
+/* --- public/style.css の末尾（メディアクエリ部分）を書き換え --- */
+
 @media (max-width: 600px) {
-    #player-status-container { width: auto; left: 10px; right: 10px; top: 10px; }
-    .container { padding: 1.5rem; margin-bottom: 200px; }
+    /* 参加者ステータス（通常クイズ用） */
+    #player-status-container { 
+        width: auto; 
+        left: 10px; 
+        right: 10px; 
+        top: 10px; 
+    }
+
+    /* ▼▼▼ パターンA: ロビー・通常クイズ・ランキングなど（ヘッダーあり） ▼▼▼ */
+    /* 既存のクラス設定：ヘッダーに被らないよう上に余白を持たせる */
+    .container { 
+        padding: 1.5rem; 
+        margin-top: 120px; 
+    }
+
+    /* ▼▼▼ パターンB: フリック・タイピングモード（キーボード優先） ▼▼▼ */
+    .container.typing-mode {
+        padding: 1.5rem; 
+        margin-bottom: 400px;
+    }
 }
 
 @keyframes fadeInUp {
