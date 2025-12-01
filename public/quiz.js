@@ -3,12 +3,6 @@
 const roomId = window.location.pathname.split('/')[2];
 const socket = io();
 
-// ▼▼▼ 設定値を追加 ▼▼▼
-// 座標取得ツールで使用した「元の地図画像」のサイズを設定してください
-const ORIGINAL_MAP_WIDTH = 2400;  // 例: 800px (座標取得時の画像幅)
-const ORIGINAL_MAP_HEIGHT = 1600; // 例: 800px (座標取得時の画像高さ)
-// ▲▲▲ ここまで ▲▲▲
-
 let hasProceeded = false;
 let isEliminated = false;
 let canProceed = false;
@@ -23,7 +17,7 @@ const playerStatusList = document.getElementById('player-status-list');
 
 // ▼▼▼ 地図用要素を取得 ▼▼▼
 const mapContainer = document.getElementById('map-container');
-const mapPin = document.getElementById('map-pin');
+// ※ map-pin は画像切り替え方式に変更したため不要になりました
 // ▲▲▲ ここまで ▲▲▲
 
 socket.on('connect', () => {
@@ -149,8 +143,9 @@ socket.on('player-answered', ({ name, isCorrect, eliminated }) => {
     }
 });
 
-// ▼▼▼ answer-result 受信時の処理 (修正) ▼▼▼
-socket.on('answer-result', ({ correct, correctAnswer, trivia, eliminated, region, x, y }) => {
+// ▼▼▼ answer-result 受信時の処理 (mapImage 対応版) ▼▼▼
+// 修正点: 引数から x, y を削除し、mapImage を追加しました
+socket.on('answer-result', ({ correct, correctAnswer, trivia, eliminated, region, mapImage }) => {
     if (isEliminated) return;
     
     if (eliminated) {
@@ -161,7 +156,7 @@ socket.on('answer-result', ({ correct, correctAnswer, trivia, eliminated, region
     questionEl.style.display = 'none';
     resultEl.innerHTML = '';
 
-// --- 地図表示ロジック (画像切り替え版) ---
+    // --- 地図表示ロジック (画像切り替え版) ---
     // mapImage (ファイル名) が送られてきた場合のみ表示
     if (mapContainer && mapImage) {
         const mapImgElement = document.getElementById('quiz-map-image');
@@ -171,7 +166,7 @@ socket.on('answer-result', ({ correct, correctAnswer, trivia, eliminated, region
             mapContainer.style.display = 'block';
         }
     } else if (mapContainer) {
-        // 画像がない場合は非表示にする、あるいはデフォルト画像に戻す
+        // 画像がない場合は非表示にする
         mapContainer.style.display = 'none';
     }
     // ---------------------
