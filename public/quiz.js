@@ -161,16 +161,18 @@ socket.on('answer-result', ({ correct, correctAnswer, trivia, eliminated, region
     questionEl.style.display = 'none';
     resultEl.innerHTML = '';
 
-    // --- 地図表示ロジック ---
-    if (mapContainer && x !== undefined && y !== undefined) {
-        mapContainer.style.display = 'block';
-        
-        // 座標をパーセンテージに変換
-        const leftPercent = (x / ORIGINAL_MAP_WIDTH) * 100;
-        const topPercent = (y / ORIGINAL_MAP_HEIGHT) * 100;
-        
-        mapPin.style.left = `${leftPercent}%`;
-        mapPin.style.top = `${topPercent}%`;
+// --- 地図表示ロジック (画像切り替え版) ---
+    // mapImage (ファイル名) が送られてきた場合のみ表示
+    if (mapContainer && mapImage) {
+        const mapImgElement = document.getElementById('quiz-map-image');
+        if (mapImgElement) {
+            // public/images/ フォルダ内の画像を指定
+            mapImgElement.src = `/images/${mapImage}`;
+            mapContainer.style.display = 'block';
+        }
+    } else if (mapContainer) {
+        // 画像がない場合は非表示にする、あるいはデフォルト画像に戻す
+        mapContainer.style.display = 'none';
     }
     // ---------------------
 

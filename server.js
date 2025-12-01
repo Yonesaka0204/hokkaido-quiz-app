@@ -207,9 +207,7 @@ io.on('connection', (socket) => {
                 eliminated: player.eliminated,
                 // ▼▼▼ 追加 ▼▼▼
                 region: question.region, // 後で使うかもしれないので
-                x: question.x,           // 座標X
-                y: question.y            // 座標Y
-                // ▲▲▲ 追加 ▲▲▲
+                mapImage: question.mapImage
             });
             io.to(roomId).emit('player-answered', { name: player.name, isCorrect, eliminated: player.eliminated });
             state.answersReceived++;
